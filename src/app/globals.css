@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-blue: #0a1835;
+  --color-brand-blue-light: #0f2347;
+  --color-brand-blue-dark: #060f22;
+  --color-brand-yellow: #f1af3c;
+  --color-brand-yellow-dark: #d97706;
+  --color-brand-yellow-light: #fef3c7;
+  --color-brand-red: #ef4444;
+  --color-brand-red-light: #fee2e2;
+  --color-brand-beige: #f4f6f9;
+  --color-brand-cream: #f5f3ed;
+  --color-brand-text-navy: #0f1a30;
+  --color-brand-text-grey: #5e6675;
+  
+  --color-blue-accent: #0c46c4;
+  --color-blue-accent-light: #dbeafe;
+  --color-gold-accent: #d97706;
+  --color-gold-accent-light: #fef3c7;
+  --color-pink-accent: #dc2626;
+  --color-pink-accent-light: #fee2e2;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PREMIUM THEME BRAND SYSTEM — Sync with Main Landing Page
+   Primary:   Deep Navy  #0a1835 (Sidebars, Headers)
+   Secondary: Gold Yellow #f1af3c or #fbbf24 (Active states)
+   BG:        Warm Beige #faf9f6 (Body background)
+   Card BG:   Pure White #ffffff (Dashboard Cards)
+   Text Navy: #0f1a30
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --primary-blue: #0a1835;
+  --secondary-yellow: #f1af3c;
+  --accent-red: #dc2626;
+  --sky-blue: #fbbf24;
+
+  --background: #f4f6f9;
+  --foreground: #0f1a30;
+  
+  --card-bg: #ffffff;
+  --card-border: rgba(10, 24, 53, 0.08);
+  --glow-color: rgba(241, 175, 60, 0.1);
+}
+
+/* Enforce the exact typography font sizes, families, and weights from the main website */
+body {
+  color: #0f1a30 !important;
+  background-color: #f4f6f9 !important;
+  background: #f4f6f9 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 13.5px !important;
+  overflow-x: hidden;
+}
+
+/* Noise texture overlay */
+.noise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Grid dot bg */
+.dotbg {
+  background-image: radial-gradient(rgba(10,24,53,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Input Focus Glow from Main Site */
+input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  border-color: #f1af3c !important;
+  box-shadow: 0 0 0 3px rgba(241, 175, 60, 0.18) !important;
+}
+
+/* Sidebar Styling: Needs to look like the main website's header (Deep Navy with gold/white accents) */
+aside {
+  background: #0a1835 !important;
+  color: #ffffff !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 4px 0 25px rgba(6, 15, 34, 0.15) !important;
+}
+
+/* Header Styling: Matches sidebar navy for unified dark frame */
+header {
+  background-color: #0a1835 !important;
+  color: #ffffff !important;
+  border-bottom: 2.5px solid #f1af3c !important;
+  box-shadow: 0 2px 10px rgba(6, 15, 34, 0.15) !important;
+}
+
+header h2 {
+  color: #ffffff !important;
+}
+
+/* Enforce dark text inside white cards / forms */
+main div[class*="bg-white"] {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(10, 24, 53, 0.08) !important;
+  color: #0f1a30 !important;
+  box-shadow: 0 4px 20px rgba(10, 24, 53, 0.03) !important;
+}
+
+/* Fix text colors for labels and headers to match the main site */
+label {
+  color: #0a1835 !important;
+  font-weight: 700 !important;
+}
+
+h3, h4, h5 {
+  color: #0a1835 !important;
+}
+
+/* Solid Brand Backgrounds */
+.gradient-brand-header {
+  background: #0a1835 !important;
+}
+
+.gradient-brand-accent {
+  background: #ef4444 !important;
+}
+
+.gradient-brand-yellow {
+  background: #f1af3c !important;
+}
+
+/* Micro-animations */
+.hover-glow {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.hover-glow:hover {
+  box-shadow: 0 8px 30px rgba(241, 175, 60, 0.15) !important;
+  border-color: rgba(241, 175, 60, 0.4) !important;
+  transform: translateY(-2.5px) !important;
+}
+
+/* Custom brand color utilities */
+.text-navy { color: #0a1835; }
+.text-gold { color: #f1af3c; }
+.bg-brand-blue { background-color: #0a1835; }
+.bg-brand-yellow { background-color: #f1af3c; }
+
+/* Premium Global Input & Form Control Theme Overrides */
+input, select, textarea {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  border: 1.5px solid rgba(10, 24, 53, 0.12) !important;
+  color: #0f1a30 !important;
+  border-radius: 10px !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+input::placeholder, textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Premium Tailwind Slate Class Alignment */
+.border-slate-200, .border-slate-100 {
+  border-color: rgba(10, 24, 53, 0.08) !important;
+}
+.text-slate-500 {
+  color: #5e6675 !important; /* Brand Text Grey */
+}
+.text-slate-400 {
+  color: #718096 !important; /* Vibrant mid-grey for descriptions */
+}
