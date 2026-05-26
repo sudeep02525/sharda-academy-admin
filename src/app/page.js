@@ -50,6 +50,8 @@ const getSidebarIcon = (id, className) => {
   }
 };
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 export default function AdminPortal() {
   const [token, setToken] = useState("");
   const [email, setEmail] = useState("");
@@ -107,7 +109,7 @@ export default function AdminPortal() {
   const fetchAnalytics = async (authToken) => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/sams/admin/analytics", {
+      const res = await fetch(`${API_BASE_URL}/api/sams/admin/analytics`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       const data = await res.json();
@@ -139,7 +141,7 @@ export default function AdminPortal() {
     setMessage("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -175,7 +177,7 @@ export default function AdminPortal() {
     setMessage("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/forgot-password", {
+      const res = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -203,7 +205,7 @@ export default function AdminPortal() {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/reset-password", {
+      const res = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp, newPassword }),
@@ -241,7 +243,7 @@ export default function AdminPortal() {
     setError("");
     setSimSuccess("");
     try {
-      const res = await fetch("http://localhost:5000/api/sams/biometric-sync", {
+      const res = await fetch(`${API_BASE_URL}/api/sams/biometric-sync`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ biometricId: simBiometricId, deviceId: "Front Entrance Biometric Device" }),
@@ -267,7 +269,7 @@ export default function AdminPortal() {
     setMessage("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/sams/admin/users", {
+      const res = await fetch(`${API_BASE_URL}/api/sams/admin/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -298,7 +300,7 @@ export default function AdminPortal() {
     if (!confirm("Are you sure you want to delete this student record?")) return;
     setLoading(true);
     try {
-      await fetch(`http://localhost:5000/api/sams/admin/users/${id}`, {
+      await fetch(`${API_BASE_URL}/api/sams/admin/users/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -314,7 +316,7 @@ export default function AdminPortal() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/sams/admin/fees", {
+      const res = await fetch(`${API_BASE_URL}/api/sams/admin/fees`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -338,7 +340,7 @@ export default function AdminPortal() {
   const markInvoicePaid = async (feeId) => {
     setLoading(true);
     try {
-      await fetch(`http://localhost:5000/api/sams/admin/fees/${feeId}`, {
+      await fetch(`${API_BASE_URL}/api/sams/admin/fees/${feeId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -358,7 +360,7 @@ export default function AdminPortal() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/sams/admin/timetables", {
+      const res = await fetch(`${API_BASE_URL}/api/sams/admin/timetables`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -385,7 +387,7 @@ export default function AdminPortal() {
   const approveInquiry = async (id, status) => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/sams/admin/admissions/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/sams/admin/admissions/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
