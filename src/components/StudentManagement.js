@@ -40,6 +40,8 @@ export default function StudentManagement() {
   };
 
   const [formData, setFormData] = useState(emptyForm);
+  const [profilePhotoFile, setProfilePhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState("");
 
   useEffect(() => { fetchStudents(); }, [search, filterClass, filterBatch]);
 
@@ -69,29 +71,45 @@ export default function StudentManagement() {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => setFormData((prev) => ({ ...prev, profilePhoto: event.target.result }));
-      reader.readAsDataURL(file);
+      setProfilePhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const data = new FormData();
+      Object.keys(formData).forEach((key) => {
+        if (key === "profilePhoto") return;
+        if (formData[key] !== undefined && formData[key] !== null) {
+          data.append(key, formData[key]);
+        }
+      });
+
+      if (profilePhotoFile) {
+        data.append("profilePhoto", profilePhotoFile);
+      } else if (formData.profilePhoto === "") {
+        data.append("profilePhoto", "");
+      }
+
+      const headers = {
+        Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+        "Content-Type": "multipart/form-data",
+      };
+
       if (editingId) {
-        await axios.put(`${API}/admin/students/${editingId}`, formData, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
-        });
+        await axios.put(`${API}/admin/students/${editingId}`, data, { headers });
         alert("Student updated successfully");
       } else {
-        await axios.post(`${API}/admin/students`, formData, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
-        });
+        await axios.post(`${API}/admin/students`, data, { headers });
         alert("Student added successfully");
       }
       setShowForm(false);
       setEditingId(null);
       setFormData(emptyForm);
+      setProfilePhotoFile(null);
+      setPhotoPreview("");
       fetchStudents();
     } catch (error) {
       alert("Error: " + (error.response?.data?.message || error.message));
@@ -109,6 +127,8 @@ export default function StudentManagement() {
       motherPhone: student.motherPhone || "", homeAddress: student.homeAddress || "",
       biometricId: student.biometricId || "", profilePhoto: student.profilePhoto || "",
     });
+    setProfilePhotoFile(null);
+    setPhotoPreview("");
     setEditingId(student._id);
     setShowForm(true);
   };
@@ -226,9 +246,11 @@ export default function StudentManagement() {
 
                 {/* Profile Photo */}
                 <div className="flex items-center gap-4 p-4 bg-beige rounded-xl border border-navy/8">
-                  <div className="w-16 h-16 rounded-full bg-navy/10 border-2 border-gold/30 overflow-hidden flex items-center justify-center flex-shrink-0">
-                    {formData.profilePhoto ? (
-                      <img src={formData.profilePhoto} alt="Preview" className="w-full h-full object-cover" />
+                  <div className="relative w-16 h-16 rounded-full bg-navy/10 border-2 border-gold/30 overflow-hidden flex items-center justify-center flex-shrink-0">
+                    {photoPreview ? (
+                      <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : formData.profilePhoto ? (
+                      <img src={formData.profilePhoto.startsWith("http") || formData.profilePhoto.startsWith("data:") ? formData.profilePhoto : `http://localhost:5000${formData.profilePhoto}`} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-navy/30">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -238,7 +260,20 @@ export default function StudentManagement() {
                   <div className="flex-1">
                     <label className="block text-[11px] font-bold text-navy uppercase tracking-wider mb-1">Profile Photo</label>
                     <input type="file" accept="image/*" onChange={handlePhotoChange}
-                      className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-navy file:text-white hover:file:bg-navy-light cursor-pointer" />
+                      className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-navy file:text-white hover:file:bg-navy-light cursor-pointer mb-2" />
+                    {(photoPreview || formData.profilePhoto) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfilePhotoFile(null);
+                          setPhotoPreview("");
+                          setFormData((prev) => ({ ...prev, profilePhoto: "" }));
+                        }}
+                        className="text-[10px] font-extrabold text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors"
+                      >
+                        Remove Photo
+                      </button>
+                    )}
                   </div>
                 </div>
 

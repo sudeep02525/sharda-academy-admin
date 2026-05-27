@@ -108,13 +108,44 @@
   --card-bg: #ffffff;
   --card-border: rgba(10, 24, 53, 0.08);
   --glow-color: rgba(241, 175, 60, 0.1);
+  --text-primary: #0f1a30;
+  --text-secondary: #5e6675;
+  --text-tertiary: #94a3b8;
+  --dot-color: rgba(10,24,53,0.06);
+  --input-bg: #ffffff;
+  --input-border: rgba(10, 24, 53, 0.12);
+  --input-text: #0f1a30;
+  --header-bg: #0a1835;
+  --header-text: #ffffff;
+  --sidebar-bg: #0a1835;
+  --sidebar-text: #ffffff;
+}
+
+.dark {
+  --background: #0B1120;
+  --foreground: #F9FAFB;
+  
+  --card-bg: #131C2E;
+  --card-border: #243145;
+  --glow-color: rgba(244, 182, 61, 0.15);
+  --text-primary: #F9FAFB;
+  --text-secondary: #CBD5E1;
+  --text-tertiary: #94A3B8;
+  --dot-color: rgba(255, 255, 255, 0.03);
+  --input-bg: #162033;
+  --input-border: #2A3950;
+  --input-text: #F9FAFB;
+  --header-bg: #081226;
+  --header-text: #F9FAFB;
+  --sidebar-bg: #081226;
+  --sidebar-text: #F9FAFB;
 }
 
 /* Enforce the exact typography font sizes, families, and weights from the main website */
 body {
-  color: #0f1a30 !important;
-  background-color: #f4f6f9 !important;
-  background: #f4f6f9 !important;
+  color: var(--text-primary) !important;
+  background-color: var(--background) !important;
+  background: var(--background) !important;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-size: 13.5px !important;
   overflow-x: hidden;
@@ -125,14 +156,14 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' filter-opacity='0.035' opacity='0.035'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 0;
 }
 
 /* Grid dot bg */
 .dotbg {
-  background-image: radial-gradient(rgba(10,24,53,0.06) 1px, transparent 1px);
+  background-image: radial-gradient(var(--dot-color) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 
@@ -145,45 +176,96 @@ input:focus, select:focus, textarea:focus {
 
 /* Sidebar Styling: Needs to look like the main website's header (Deep Navy with gold/white accents) */
 aside {
-  background: #0a1835 !important;
-  color: #ffffff !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: var(--sidebar-bg) !important;
+  color: var(--sidebar-text) !important;
+  border-right: 1px solid var(--card-border) !important;
   box-shadow: 4px 0 25px rgba(6, 15, 34, 0.15) !important;
 }
 
 /* Header Styling: Matches sidebar navy for unified dark frame */
 header {
-  background-color: #0a1835 !important;
-  color: #ffffff !important;
+  background-color: var(--header-bg) !important;
+  color: var(--header-text) !important;
   border-bottom: 2.5px solid #f1af3c !important;
   box-shadow: 0 2px 10px rgba(6, 15, 34, 0.15) !important;
 }
 
+@media (prefers-color-scheme: light) {
+  header {
+    background-color: #0a1835 !important;
+  }
+}
+
 header h2 {
-  color: #ffffff !important;
+  color: var(--header-text) !important;
 }
 
 /* Enforce dark text inside white cards / forms */
 main div[class*="bg-white"] {
-  background-color: #ffffff !important;
-  border: 1px solid rgba(10, 24, 53, 0.08) !important;
-  color: #0f1a30 !important;
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
+  color: var(--text-primary) !important;
   box-shadow: 0 4px 20px rgba(10, 24, 53, 0.03) !important;
+}
+
+/* Additional specific card override for dark mode */
+.dark main div[class*="bg-white"],
+.dark div[class*="bg-white"],
+.dark .bg-white {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--card-border) !important;
+}
+
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700,
+.dark .text-gray-900,
+.dark .text-gray-800 {
+  color: var(--text-primary) !important;
+}
+
+.dark .text-slate-600,
+.dark .text-slate-500,
+.dark .text-slate-400,
+.dark .text-gray-600,
+.dark .text-gray-500 {
+  color: var(--text-secondary) !important;
+}
+
+.dark .text-slate-300,
+.dark .text-gray-400 {
+  color: var(--text-tertiary) !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-100,
+.dark .bg-gray-50,
+.dark .bg-gray-100 {
+  background-color: var(--input-bg) !important;
+}
+
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-300,
+.dark .border-gray-100,
+.dark .border-gray-200 {
+  border-color: var(--card-border) !important;
 }
 
 /* Fix text colors for labels and headers to match the main site */
 label {
-  color: #0a1835 !important;
+  color: var(--text-primary) !important;
   font-weight: 700 !important;
 }
 
 h3, h4, h5 {
-  color: #0a1835 !important;
+  color: var(--text-primary) !important;
 }
 
 /* Solid Brand Backgrounds */
 .gradient-brand-header {
-  background: #0a1835 !important;
+  background: var(--header-bg) !important;
 }
 
 .gradient-brand-accent {
@@ -205,31 +287,40 @@ h3, h4, h5 {
 }
 
 /* Custom brand color utilities */
-.text-navy { color: #0a1835; }
+.text-navy { color: var(--text-primary); }
 .text-gold { color: #f1af3c; }
-.bg-brand-blue { background-color: #0a1835; }
+.bg-brand-blue { background-color: var(--primary-blue); }
 .bg-brand-yellow { background-color: #f1af3c; }
 
 /* Premium Global Input & Form Control Theme Overrides */
 input, select, textarea {
-  background-color: #ffffff !important;
-  background: #ffffff !important;
-  border: 1.5px solid rgba(10, 24, 53, 0.12) !important;
-  color: #0f1a30 !important;
+  background-color: var(--input-bg) !important;
+  background: var(--input-bg) !important;
+  border: 1.5px solid var(--input-border) !important;
+  color: var(--input-text) !important;
   border-radius: 10px !important;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 input::placeholder, textarea::placeholder {
-  color: #94a3b8 !important;
+  color: var(--text-tertiary) !important;
 }
 
 /* Premium Tailwind Slate Class Alignment */
 .border-slate-200, .border-slate-100 {
-  border-color: rgba(10, 24, 53, 0.08) !important;
+  border-color: var(--card-border) !important;
 }
 .text-slate-500 {
-  color: #5e6675 !important; /* Brand Text Grey */
+  color: var(--text-secondary) !important;
 }
 .text-slate-400 {
-  color: #718096 !important; /* Vibrant mid-grey for descriptions */
+  color: var(--text-secondary) !important;
+}
+
+.theme-toggle-btn {
+  transition: all 0.3s ease !important;
+}
+
+.theme-toggle-btn:hover {
+  border-color: #F4B63D !important;
+  box-shadow: 0 0 10px rgba(244, 182, 61, 0.3) !important;
 }

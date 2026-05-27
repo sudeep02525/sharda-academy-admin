@@ -114,6 +114,8 @@ export default function AdminPortal() {
     biometricId: "", parentEmail: "", fatherPhone: "",
     homeAddress: "", password: "", profilePhoto: "", status: "Active"
   });
+  const [newUserPhotoFile, setNewUserPhotoFile] = useState(null);
+  const [newUserPhotoPreview, setNewUserPhotoPreview] = useState("");
   
   const [newFee, setNewFee] = useState({ studentId: "", amount: "", dueDate: "", description: "" });
   const [newSchedule, setNewSchedule] = useState({
@@ -124,8 +126,76 @@ export default function AdminPortal() {
   const [idCardSimulating, setIdCardSimulating] = useState(null);
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
+  const [editUserPhotoFile, setEditUserPhotoFile] = useState(null);
+  const [editUserPhotoPreview, setEditUserPhotoPreview] = useState("");
   const [showEditStudentModal, setShowEditStudentModal] = useState(false);
   const [classFilter, setClassFilter] = useState("all");
+
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const handleThemeChange = (e) => {
+      const isMobile = window.innerWidth < 640;
+      if (isMobile) {
+        if (e.matches) {
+          setDarkMode(true);
+          document.documentElement.classList.add("dark");
+        } else {
+          setDarkMode(false);
+          document.documentElement.classList.remove("dark");
+        }
+      }
+    };
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    mediaQuery.addEventListener("change", handleThemeChange);
+    
+    const isMobile = window.innerWidth < 640;
+    const systemDark = mediaQuery.matches;
+    const savedTheme = localStorage.getItem("sams-theme");
+    const shouldBeDark = isMobile ? systemDark : (savedTheme === "dark" || (!savedTheme && systemDark));
+    
+    if (shouldBeDark) {
+      setDarkMode(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      setDarkMode(false);
+      document.documentElement.classList.remove("dark");
+    }
+
+    return () => mediaQuery.removeEventListener("change", handleThemeChange);
+  }, []);
+
+  // Auto-dismiss messages and errors after 5 seconds to prevent static alerts
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError("");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage("");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
+  const toggleTheme = () => {
+    if (darkMode) {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("sams-theme", "light");
+      setDarkMode(false);
+    } else {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("sams-theme", "dark");
+      setDarkMode(true);
+    }
+  };
 
   useEffect(() => {
     const savedToken = localStorage.getItem("admin_token");
@@ -303,13 +373,24 @@ export default function AdminPortal() {
     setMessage("");
 
     try {
+      const formData = new FormData();
+      Object.keys(newUser).forEach((key) => {
+        if (key === "profilePhoto") return;
+        if (newUser[key] !== undefined && newUser[key] !== null) {
+          formData.append(key, newUser[key]);
+        }
+      });
+
+      if (newUserPhotoFile) {
+        formData.append("profilePhoto", newUserPhotoFile);
+      }
+
       const res = await fetch(`${API_BASE_URL}/api/sams/admin/users`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(newUser)
+        body: formData
       });
       const data = await res.json();
       if (data.success) {
@@ -320,12 +401,15 @@ export default function AdminPortal() {
           biometricId: "", parentEmail: "", fatherPhone: "",
           homeAddress: "", password: "", profilePhoto: "", status: "Active"
         });
+        setNewUserPhotoFile(null);
+        setNewUserPhotoPreview("");
         fetchAnalytics(token);
       } else {
         setError(data.message || "Failed to create user.");
       }
     } catch (err) {
       console.error(err);
+      setError("Failed to register student.");
     } finally {
       setLoading(false);
     }
@@ -586,19 +670,35 @@ export default function AdminPortal() {
     setMessage("");
 
     try {
+      const formData = new FormData();
+      Object.keys(editingStudent).forEach((key) => {
+        if (key === "profilePhoto") return;
+        if (editingStudent[key] !== undefined && editingStudent[key] !== null) {
+          formData.append(key, editingStudent[key]);
+        }
+      });
+
+      if (editUserPhotoFile) {
+        formData.append("profilePhoto", editUserPhotoFile);
+      } else if (editingStudent.profilePhoto === "") {
+        // Explicitly clear photo
+        formData.append("profilePhoto", "");
+      }
+
       const res = await fetch(`${API_BASE_URL}/api/sams/admin/users/${editingStudent._id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(editingStudent)
+        body: formData
       });
       const data = await res.json();
       if (data.success) {
         setMessage(`Successfully updated student profile for ${editingStudent.name}!`);
         setShowEditStudentModal(false);
         setEditingStudent(null);
+        setEditUserPhotoFile(null);
+        setEditUserPhotoPreview("");
         fetchAnalytics(token);
       } else {
         setError(data.message || "Failed to update user.");
@@ -755,32 +855,103 @@ export default function AdminPortal() {
               RFID-CARD-AUTHENTICATED
             </div>
           </div>
-          <script>
-            window.onload = function() { window.print(); }
-          </script>
         </body>
       </html>
     `);
     printWindow.document.close();
+    printWindow.print();
   };
 
   // Render Login / Forgot Password Panels
   if (step < 3) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-brand-beige dotbg noise">
+      <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-beige dotbg noise overflow-x-hidden relative">
         
-        <div className="w-full max-w-md relative z-10">
+        {/* 🎨 Left Panel: High-End Showcase (Hidden on Mobile) */}
+        <div className="hidden lg:flex lg:col-span-7 bg-[#060f22] text-white flex-col justify-between p-12 relative overflow-hidden border-r border-white/5">
+          {/* Slow-rotating background glow */}
+          <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-gradient-to-br from-gold/10 to-amber-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse-glow"></div>
+          <div className="absolute -bottom-40 -right-40 w-[650px] h-[650px] bg-gradient-to-tr from-navy/30 to-gold/5 rounded-full blur-[160px] pointer-events-none"></div>
+
+          {/* Top Branding */}
+          <div className="flex items-center gap-3 relative z-10">
+            <img src="/logo.png" alt="Sharda Academy Logo" className="w-12 h-12 object-contain"
+              onError={(e) => { e.target.style.display = 'none'; }} />
+            <div className="text-left">
+              <h2 className="text-lg font-black text-gold tracking-widest uppercase leading-none">SHARDA ACADEMY</h2>
+              <p className="text-[9px] font-bold text-slate-450 tracking-widest uppercase leading-none mt-1.5">Master ERP Platform</p>
+            </div>
+          </div>
+
+          {/* Central Showcase Content */}
+          <div className="my-auto space-y-8 relative z-10 max-w-lg text-left">
+            <div className="space-y-3">
+              <span className="text-[10px] font-extrabold tracking-widest uppercase text-gold bg-gold/10 border border-gold/20 px-3 py-1 rounded-lg inline-block">
+                Master Admin ERP Console
+              </span>
+              <h1 className="text-3xl lg:text-4xl font-black tracking-tight leading-tight text-white font-display">
+                Command and Control the <span className="bg-gradient-to-r from-gold to-amber-400 bg-clip-text text-transparent">Entire Academy</span> System
+              </h1>
+              <p className="text-xs text-slate-350 leading-relaxed font-semibold">
+                SAMS Administrative Console manages master student records, registers biometric tap systems, generates tuition fee invoices, coordinates exam scorecards, and broadcasts bulk alerts in real-time.
+              </p>
+            </div>
+
+            {/* Frosted Showcase Highlight Panel */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md shadow-2xl space-y-4">
+              <h4 className="text-xs font-black uppercase tracking-wider text-gold">Master Control Panels:</h4>
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="flex items-start gap-2.5">
+                  <span className="text-gold text-base font-extrabold mt-0.5">👥</span>
+                  <div>
+                    <h5 className="font-bold text-white text-[11px]">User Registration</h5>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Enrolls student profiles and logins</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="text-gold text-base font-extrabold mt-0.5">🛎️</span>
+                  <div>
+                    <h5 className="font-bold text-white text-[11px]">System Analytics</h5>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Overview of billing & tap logs</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="text-gold text-base font-extrabold mt-0.5">🪙</span>
+                  <div>
+                    <h5 className="font-bold text-white text-[11px]">Ledger Management</h5>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Tuition invoices & cashier counters</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="text-gold text-base font-extrabold mt-0.5">📢</span>
+                  <div>
+                    <h5 className="font-bold text-white text-[11px]">Broadcast Bulletins</h5>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Sends automated email/SMS notices</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Brand Label */}
+          <div className="text-[10px] text-slate-500 font-semibold tracking-wider uppercase relative z-10 text-left">
+            Sharda Academy SAMS • Established 2026
+          </div>
+        </div>
+
+        {/* 📝 Right Panel: Sign-in Section */}
+        <div className="col-span-12 lg:col-span-5 flex flex-col justify-center items-center p-6 sm:p-12 relative z-10">
           
-          {/* Logo & branding header */}
-          <div className="flex flex-col items-center mb-6 text-center">
-            <img src="/logo.png" alt="Sharda Academy Logo" className="w-16 h-16 mb-2"
+          {/* Mobile Header Branding (Shown only on small screens) */}
+          <div className="flex flex-col items-center mb-6 text-center lg:hidden">
+            <img src="/logo.png" alt="Sharda Academy Logo" className="w-14 h-14 mb-2"
               onError={(e) => { e.target.style.display = 'none'; }} style={{ objectFit: "contain" }} />
-            <h2 className="text-xl font-black text-brand-blue uppercase tracking-tight">SHARDA ACADEMY</h2>
-            <p className="text-[9px] font-bold text-brand-yellow uppercase tracking-widest mt-0.5">Master Admin Console</p>
+            <h2 className="text-lg font-black text-navy uppercase tracking-tight">SHARDA ACADEMY</h2>
+            <p className="text-[9px] font-bold text-gold uppercase tracking-widest mt-0.5">Master Admin Console</p>
           </div>
 
           {/* Unified White Card with Gold highlight */}
-          <div className="w-full max-w-md p-8 rounded-2xl bg-white border border-brand-yellow/30 shadow-2xl space-y-6">
+          <div className="w-full max-w-md p-8 rounded-2xl bg-white border border-gold/30 shadow-2xl space-y-6">
 
             {/* Alert banners */}
             {error && (
@@ -792,8 +963,8 @@ export default function AdminPortal() {
               </div>
             )}
             {message && (
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-brand-yellow/30 text-xs font-semibold text-brand-yellow-dark w-full">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4 h-4 text-brand-yellow-dark flex-shrink-0 mt-0.5">
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-gold/30 text-xs font-semibold text-gold-dark w-full">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4 h-4 text-gold-dark flex-shrink-0 mt-0.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
                 </svg>
                 <span>{message}</span>
@@ -802,34 +973,35 @@ export default function AdminPortal() {
 
             {/* ── LOGIN VIEW: Email + Password ──────────────────────── */}
             {authView === "login" && (
-              <form onSubmit={handleAdminLogin} className="space-y-4 text-xs">
-                <div className="text-center pb-1">
-                  <p className="text-xs font-black text-brand-blue uppercase tracking-wider">Secure Admin Sign In</p>
+              <form onSubmit={handleAdminLogin} className="space-y-4 text-xs animate-fade-in-up">
+                <div className="text-center pb-2 border-b border-slate-100">
+                  <h3 className="text-sm font-black uppercase tracking-wider text-navy">Secure Admin Sign In</h3>
+                  <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Master Admin Access Only</p>
                 </div>
 
                 <div className="space-y-4">
-                  <div>
+                  <div className="text-left">
                     <label className="block text-[10px] font-bold text-slate-800 uppercase tracking-wider mb-1.5">Admin Email</label>
                     <input
                       type="email" required
                       value={email} onChange={(e) => setEmail(e.target.value)}
                       placeholder="e.g. admin@gmail.com"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow/50 transition-all"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#f1af3c] focus:ring-1 focus:ring-[#f1af3c]/50 transition-all"
                     />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <label className="block text-[10px] font-bold text-slate-800 uppercase tracking-wider mb-1.5">Password</label>
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"} required
                         value={password} onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full px-4 py-2.5 pr-12 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow/50 transition-all"
+                        className="w-full px-4 py-2.5 pr-12 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#f1af3c] focus:ring-1 focus:ring-[#f1af3c]/50 transition-all"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 focus:outline-none select-none"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 focus:outline-none select-none cursor-pointer"
                       >
                         {showPassword ? (
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4 h-4">
@@ -848,7 +1020,7 @@ export default function AdminPortal() {
 
                 <button
                   type="submit" disabled={loading}
-                  className="w-full py-3 rounded-xl text-xs font-extrabold text-brand-blue bg-brand-yellow hover:bg-amber-400 shadow-md shadow-brand-yellow/20 uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer mt-2"
+                  className="w-full py-3 rounded-xl text-xs font-extrabold text-[#0a1835] bg-[#f1af3c] hover:bg-amber-400 shadow-md shadow-[#f1af3c]/20 uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer mt-2"
                 >
                   {loading ? "AUTHENTICATING..." : "SIGN IN TO CONSOLE"}
                 </button>
@@ -856,7 +1028,7 @@ export default function AdminPortal() {
                 <button
                   type="button"
                   onClick={() => { setAuthView("forgot_email"); setError(""); setMessage(""); }}
-                  className="block w-full text-center text-[10px] font-bold text-slate-500 hover:text-brand-blue uppercase tracking-wider transition-colors duration-200 cursor-pointer"
+                  className="block w-full text-center text-[10px] font-bold text-slate-500 hover:text-[#0a1835] uppercase tracking-wider transition-colors duration-200 cursor-pointer"
                 >
                   Forgot Password?
                 </button>
@@ -865,25 +1037,25 @@ export default function AdminPortal() {
 
             {/* ── FORGOT: Step 1 — Enter Email ──────────────────────── */}
             {authView === "forgot_email" && (
-              <form onSubmit={handleForgotRequest} className="space-y-4 text-xs">
-                <div className="text-center pb-1">
-                  <p className="text-xs font-black text-brand-blue uppercase tracking-wider">Password Recovery</p>
-                  <p className="text-[10px] text-slate-500 mt-1 font-medium">Enter your admin email to receive a recovery code</p>
+              <form onSubmit={handleForgotRequest} className="space-y-4 text-xs animate-fade-in-up">
+                <div className="text-center pb-2 border-b border-slate-100">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-navy">Password Recovery</h3>
+                  <p className="text-[10px] font-bold text-slate-455 mt-1 uppercase tracking-widest">Enter your registered admin email</p>
                 </div>
 
-                <div>
+                <div className="text-left">
                   <label className="block text-[10px] font-bold text-slate-800 uppercase tracking-wider mb-1.5">Admin Email</label>
                   <input
                     type="email" required
                     value={email} onChange={(e) => setEmail(e.target.value)}
                     placeholder="e.g. admin@gmail.com"
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow/50 transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#f1af3c] focus:ring-1 focus:ring-[#f1af3c]/50 transition-all"
                   />
                 </div>
 
                 <button
                   type="submit" disabled={loading}
-                  className="w-full py-3 rounded-xl text-xs font-extrabold text-brand-blue bg-brand-yellow hover:bg-amber-400 shadow-md shadow-brand-yellow/20 uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer mt-2"
+                  className="w-full py-3 rounded-xl text-xs font-extrabold text-[#0a1835] bg-[#f1af3c] hover:bg-amber-400 shadow-md shadow-[#f1af3c]/20 uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer mt-2"
                 >
                   {loading ? "SENDING CODE..." : "SEND RECOVERY CODE"}
                 </button>
@@ -891,7 +1063,7 @@ export default function AdminPortal() {
                 <button
                   type="button"
                   onClick={() => { setAuthView("login"); setError(""); setMessage(""); }}
-                  className="block w-full text-center text-[10px] font-bold text-slate-500 hover:text-brand-blue uppercase tracking-wider transition-colors duration-200 cursor-pointer"
+                  className="block w-full text-center text-[10px] font-bold text-slate-500 hover:text-[#0a1835] uppercase tracking-wider transition-colors duration-200 cursor-pointer"
                 >
                   ← Back to Sign In
                 </button>
@@ -900,35 +1072,35 @@ export default function AdminPortal() {
 
             {/* ── FORGOT: Step 2 — OTP + New Password ──────────────── */}
             {authView === "forgot_otp" && (
-              <form onSubmit={handleResetPassword} className="space-y-4 text-xs">
-                <div className="text-center pb-1">
-                  <p className="text-xs font-black text-brand-blue uppercase tracking-wider">Reset Password</p>
-                  <p className="text-[10px] text-slate-500 mt-1 font-medium">Enter the 6-digit code sent to your email</p>
+              <form onSubmit={handleResetPassword} className="space-y-4 text-xs animate-fade-in-up">
+                <div className="text-center pb-2 border-b border-slate-100">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-navy">Reset Password</h3>
+                  <p className="text-[10px] font-bold text-slate-455 mt-1 uppercase tracking-widest">Enter the 6-digit email recovery code</p>
                 </div>
 
                 <div className="space-y-4">
-                  <div>
+                  <div className="text-left">
                     <label className="block text-[10px] font-bold text-slate-800 uppercase tracking-wider mb-1.5">6-Digit Email OTP</label>
                     <input
                       type="text" required maxLength={6}
                       value={otp} onChange={(e) => setOtp(e.target.value)}
                       placeholder="— — — — — —"
-                      className="w-full px-4 py-2.5 text-center font-mono text-lg tracking-widest rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow/50 transition-all"
+                      className="w-full px-4 py-2.5 text-center font-mono text-lg tracking-widest rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#f1af3c] focus:ring-1 focus:ring-[#f1af3c]/50 transition-all"
                     />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <label className="block text-[10px] font-bold text-slate-800 uppercase tracking-wider mb-1.5">New Password</label>
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"} required
                         value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="Create new secure password"
-                        className="w-full px-4 py-2.5 pr-12 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow/50 transition-all"
+                        className="w-full px-4 py-2.5 pr-12 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#f1af3c] focus:ring-1 focus:ring-[#f1af3c]/50 transition-all"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 focus:outline-none select-none"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 focus:outline-none select-none cursor-pointer"
                       >
                         {showPassword ? (
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4 h-4">
@@ -955,7 +1127,7 @@ export default function AdminPortal() {
                 <button
                   type="button"
                   onClick={() => { setAuthView("login"); setError(""); setMessage(""); setOtp(""); setNewPassword(""); }}
-                  className="block w-full text-center text-[10px] font-bold text-slate-500 hover:text-brand-blue uppercase tracking-wider transition-colors duration-200 cursor-pointer"
+                  className="block w-full text-center text-[10px] font-bold text-slate-500 hover:text-[#0a1835] uppercase tracking-wider transition-colors duration-200 cursor-pointer"
                 >
                   ← Back to Sign In
                 </button>
@@ -964,9 +1136,8 @@ export default function AdminPortal() {
 
           </div>
 
-
-
         </div>
+
       </div>
     );
   }
@@ -976,7 +1147,7 @@ export default function AdminPortal() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-beige text-brand-text-navy flex flex-col md:flex-row noise dotbg relative">
+    <div className="min-h-screen bg-brand-beige text-[var(--text-primary)] flex flex-col md:flex-row noise dotbg relative">
       
       {/* Mobile Sidebar backdrop */}
       {sidebarOpen && (
@@ -988,9 +1159,7 @@ export default function AdminPortal() {
 
       {/* 🖥️ Collapsible Sidebar for Admin ERP */}
       <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 md:sticky md:top-0 md:h-screen shrink-0 border-r border-white/10 ${
-        sidebarOpen 
-          ? "w-64 translate-x-0" 
-          : "w-64 -translate-x-full md:w-16 md:translate-x-0"
+        sidebarOpen ? "w-64 translate-x-0" : "w-64 -translate-x-full md:w-16 md:translate-x-0"
       }`}>
         
         {sidebarOpen ? (
@@ -1007,7 +1176,7 @@ export default function AdminPortal() {
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:text-white cursor-pointer transition-all hover:bg-white/10"
+              className="p-1.5 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer transition-all hover:bg-white/10"
               aria-label="Collapse Sidebar"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
@@ -1020,7 +1189,7 @@ export default function AdminPortal() {
             <img src="/logo.png" alt="Logo" className="w-8 h-8" onError={(e) => { e.target.style.display = 'none'; }} style={{ objectFit: "contain" }} />
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:text-white cursor-pointer transition-all hover:bg-white/10"
+              className="p-1.5 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer transition-all hover:bg-white/10"
               aria-label="Expand Sidebar"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
@@ -1056,16 +1225,16 @@ export default function AdminPortal() {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center cursor-pointer ${
+                className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center cursor-pointer group ${
                   sidebarOpen ? "px-3.5 gap-3" : "justify-center px-1"
                 } ${
                   isActive
-                    ? "bg-brand-yellow text-brand-blue shadow-lg shadow-brand-yellow/25 translate-x-1 border-l-4 border-brand-yellow"
-                    : "text-slate-100 hover:text-brand-yellow hover:bg-white/5 hover:translate-x-0.5 border-l-2 border-transparent hover:border-brand-yellow"
+                    ? "bg-[#f1af3c] text-[#0a1835] shadow-lg shadow-[#f1af3c]/25 translate-x-1 border-l-4 border-[#0a1835]"
+                    : "text-slate-100 hover:text-[#f1af3c] hover:bg-white/10 hover:translate-x-0.5 border-l-2 border-transparent hover:border-[#f1af3c]"
                 }`}
               >
-                {getSidebarIcon(t.id, `h-5 w-5 transition-colors ${isActive ? "text-brand-blue" : "text-slate-300"}`)}
-                {sidebarOpen && <span>{t.label}</span>}
+                {getSidebarIcon(t.id, `h-5 w-5 transition-colors ${isActive ? "text-[#0a1835]" : "text-slate-300 group-hover:text-[#f1af3c]"}`)}
+                {sidebarOpen && <span>{t.label.toUpperCase()}</span>}
               </button>
             );
           })}
@@ -1075,7 +1244,7 @@ export default function AdminPortal() {
           {sidebarOpen ? (
             <button
               onClick={handleLogout}
-              className="w-full py-2 px-3.5 rounded-xl border border-red-500/35 bg-red-500/10 text-red-400 hover:bg-brand-red hover:text-white hover:border-transparent text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer hover:shadow-lg hover:shadow-brand-red/15"
+              className="w-full py-2 px-3.5 rounded-xl border border-red-500/35 bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white hover:border-transparent text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer hover:shadow-lg hover:shadow-red-600/15"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="h-4.5 w-4.5 flex-shrink-0">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
@@ -1086,7 +1255,7 @@ export default function AdminPortal() {
             <div className="flex justify-center">
               <button
                 onClick={handleLogout}
-                className="w-10 h-10 rounded-full border border-red-500/35 bg-red-500/10 text-red-400 hover:bg-brand-red hover:text-white hover:border-transparent transition-all duration-300 flex items-center justify-center cursor-pointer hover:shadow-lg hover:shadow-brand-red/15"
+                className="w-10 h-10 rounded-full border border-red-500/35 bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white hover:border-transparent transition-all duration-300 flex items-center justify-center cursor-pointer hover:shadow-lg hover:shadow-red-600/15"
                 title="Sign Out"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="h-4.5 w-4.5 flex-shrink-0">
@@ -1105,7 +1274,7 @@ export default function AdminPortal() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white md:hidden cursor-pointer"
+              className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white md:hidden cursor-pointer"
               aria-label="Open Sidebar"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
@@ -1116,35 +1285,67 @@ export default function AdminPortal() {
               {activeTab === "overview" ? "OVERVIEW" : activeTab === "students" ? "STUDENTS CRUD" : activeTab === "admissions" ? "ADMISSIONS INQUIRY" : activeTab === "biometric" ? "BIOMETRIC LOGS" : activeTab === "billing" ? "TUITION FEES" : activeTab === "schedules" ? "CLASS SCHEDULES" : activeTab === "logs" ? "AUDIT ACTIVITY LOGS" : activeTab.toUpperCase()}
             </h2>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {/* 🌗 Premium Light/Dark Theme Switcher */}
             <button
-              onClick={simulateExportCSV}
-              className="px-3.5 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[#0a1835] bg-brand-yellow hover:bg-amber-400 rounded-lg shadow transition duration-200 cursor-pointer flex items-center gap-1.5"
+              onClick={toggleTheme}
+              className="hidden sm:flex p-2.5 rounded-xl border border-white/10 bg-white/5 text-white cursor-pointer transition-all items-center justify-center gap-1.5 theme-toggle-btn"
+              title="Toggle Theme"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
-              <span>EXPORT LEDGER CSV</span>
+              {darkMode ? (
+                // Moon Icon (shows in Dark Mode)
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="#F4B63D" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+                </svg>
+              ) : (
+                // Sun Icon (shows in Light Mode)
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="#F4B63D" className="w-4 h-4 animate-spin-slow">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m0 13.5V21m9.75-9h-2.25M4.95 19.05l1.59-1.59m11.92-11.92l1.59-1.59M3.52 12h2.25m11.92 7.05l-1.59-1.59M4.95 4.95l1.59 1.59M12 7.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z" />
+                </svg>
+              )}
             </button>
+
           </div>
         </header>
 
         <main className="p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6 flex-grow">
 
           {error && (
-            <div className="p-3.5 text-xs font-semibold text-red-800 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 shadow-sm animate-pulse">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4 h-4 text-red-600 flex-shrink-0">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-              </svg>
-              <span>{error}</span>
+            <div className="p-3.5 text-xs font-semibold text-red-800 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between gap-2.5 shadow-sm animate-pulse w-full">
+              <div className="flex items-center gap-2.5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4 h-4 text-red-600 flex-shrink-0">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                </svg>
+                <span>{error}</span>
+              </div>
+              <button 
+                onClick={() => setError("")} 
+                className="p-1 rounded-lg hover:bg-red-100 text-red-600 transition-colors cursor-pointer flex items-center justify-center"
+                aria-label="Dismiss Error"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           )}
           {message && (
-            <div className="p-3.5 text-xs font-semibold text-brand-blue bg-brand-yellow-light border border-brand-yellow/30 rounded-xl flex items-center gap-2.5 shadow-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 text-brand-yellow-dark flex-shrink-0">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-              </svg>
-              <span>{message}</span>
+            <div className="p-3.5 text-xs font-semibold text-brand-blue bg-brand-yellow-light border border-brand-yellow/30 rounded-xl flex items-center justify-between gap-2.5 shadow-sm w-full">
+              <div className="flex items-center gap-2.5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 text-brand-yellow-dark flex-shrink-0">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <span>{message}</span>
+              </div>
+              <button 
+                onClick={() => setMessage("")} 
+                className="p-1 rounded-lg hover:bg-amber-100 text-brand-yellow-dark transition-colors cursor-pointer flex items-center justify-center"
+                aria-label="Dismiss Message"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           )}
 
@@ -1211,14 +1412,14 @@ export default function AdminPortal() {
                   <span className="px-2.5 py-0.5 text-[8px] font-extrabold text-white bg-emerald-500 rounded-full tracking-widest animate-pulse">ONLINE</span>
                 </div>
                 
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/40 text-xs flex justify-between items-center gap-4">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/40 text-xs flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
                   <div className="text-left">
                     <p className="font-extrabold text-brand-blue">RFID Biometric Gate Sync</p>
                     <p className="text-[10px] text-slate-400 mt-0.5 font-medium">Punch live gate attendance logs automatically</p>
                   </div>
                   <button
                     onClick={simulateBiometricSync}
-                    className="px-4 py-2 text-[10px] font-extrabold uppercase text-[#0a1835] bg-brand-yellow hover:bg-amber-400 rounded-lg shadow shadow-brand-yellow/15 transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer flex-shrink-0 flex items-center gap-1.5"
+                    className="px-4 py-2.5 text-[10px] font-extrabold uppercase text-[#0a1835] bg-brand-yellow hover:bg-amber-400 rounded-lg shadow shadow-brand-yellow/15 transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer flex-shrink-0 flex items-center justify-center gap-1.5 w-full sm:w-auto"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -2332,20 +2533,39 @@ export default function AdminPortal() {
                 </div>
                 <div>
                   <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Profile Photo (Optional)</label>
-                  <input
-                    type="file" accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setNewUser({...newUser, profilePhoto: reader.result});
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    className="w-full px-3.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50"
-                  />
+                  <div className="flex items-center gap-3 mb-2">
+                    {newUserPhotoPreview ? (
+                      <div className="relative w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-100 flex-shrink-0">
+                        <img src={newUserPhotoPreview} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewUserPhotoFile(null);
+                            setNewUserPhotoPreview("");
+                          }}
+                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold shadow-md hover:bg-red-650"
+                          title="Remove Photo"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center flex-shrink-0">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase">No Photo</span>
+                      </div>
+                    )}
+                    <input
+                      type="file" accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setNewUserPhotoFile(file);
+                          setNewUserPhotoPreview(URL.createObjectURL(file));
+                        }
+                      }}
+                      className="flex-1 px-3 py-1 text-xs rounded-lg border border-slate-200 bg-slate-50"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -2500,20 +2720,56 @@ export default function AdminPortal() {
                 </div>
                 <div>
                   <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Profile Photo</label>
-                  <input
-                    type="file" accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setEditingStudent({...editingStudent, profilePhoto: reader.result});
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    className="w-full px-3.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50"
-                  />
+                  <div className="flex items-center gap-3 mb-2">
+                    {editUserPhotoPreview ? (
+                      <div className="relative w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-100 flex-shrink-0">
+                        <img src={editUserPhotoPreview} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditUserPhotoFile(null);
+                            setEditUserPhotoPreview("");
+                            setEditingStudent({...editingStudent, profilePhoto: ""});
+                          }}
+                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold shadow-md hover:bg-red-650"
+                          title="Remove Photo"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : editingStudent.profilePhoto ? (
+                      <div className="relative w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-100 flex-shrink-0">
+                        <img src={editingStudent.profilePhoto.startsWith("http") || editingStudent.profilePhoto.startsWith("data:") ? editingStudent.profilePhoto : `${API_BASE_URL}${editingStudent.profilePhoto}`} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditUserPhotoFile(null);
+                            setEditUserPhotoPreview("");
+                            setEditingStudent({...editingStudent, profilePhoto: ""});
+                          }}
+                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold shadow-md hover:bg-red-650"
+                          title="Remove Photo"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center flex-shrink-0">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase">No Photo</span>
+                      </div>
+                    )}
+                    <input
+                      type="file" accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setEditUserPhotoFile(file);
+                          setEditUserPhotoPreview(URL.createObjectURL(file));
+                        }
+                      }}
+                      className="flex-1 px-3 py-1 text-xs rounded-lg border border-slate-200 bg-slate-50"
+                    />
+                  </div>
                 </div>
               </div>
 
