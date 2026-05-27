@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const API = "http://localhost:5000/api";
+const API = "http://localhost:5000/api/sams";
 
 export default function StudyMaterialManagement() {
   const [materials, setMaterials] = useState([]);
@@ -30,10 +30,10 @@ export default function StudyMaterialManagement() {
   const fetchMaterials = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/studymaterial`, {
+      const response = await axios.get(`${API}/admin/study-materials`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
       });
-      setMaterials(response.data.data);
+      setMaterials(response.data.data || response.data.materials || []);
     } catch (error) {
       alert("Error fetching materials: " + error.message);
     } finally {
@@ -66,12 +66,12 @@ export default function StudyMaterialManagement() {
     e.preventDefault();
     try {
       if (editingId) {
-        await axios.put(`${API}/admin/studymaterial/${editingId}`, formData, {
+        await axios.put(`${API}/admin/study-materials/${editingId}`, formData, {
           headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
         });
         alert("Material updated successfully");
       } else {
-        await axios.post(`${API}/admin/studymaterial`, formData, {
+        await axios.post(`${API}/admin/study-materials`, formData, {
           headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
         });
         alert("Material uploaded successfully");
@@ -99,7 +99,7 @@ export default function StudyMaterialManagement() {
   const handleDelete = async (id) => {
     if (confirm("Delete this material?")) {
       try {
-        await axios.delete(`${API}/admin/studymaterial/${id}`, {
+        await axios.delete(`${API}/admin/study-materials/${id}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
         });
         alert("Material deleted successfully");
