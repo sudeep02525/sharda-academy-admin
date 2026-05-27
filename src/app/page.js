@@ -46,7 +46,11 @@ const getSidebarIcon = (id, className) => {
         </svg>
       );
     default:
-      return null;
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+        </svg>
+      );
   }
 };
 
@@ -80,11 +84,35 @@ export default function AdminPortal() {
   const [simBiometricId, setSimBiometricId] = useState("RFID-9988-77");
   const [simSuccess, setSimSuccess] = useState("");
 
+  // New ERP states
+  const [newHomework, setNewHomework] = useState({
+    title: "", description: "", subject: "Physics", classLevel: 10, batch: "Batch A", dueDate: "", teacherName: ""
+  });
+
+  const [newStudyMaterial, setNewStudyMaterial] = useState({
+    title: "", description: "", subject: "Physics", classLevel: 10, batch: "All Batches", materialType: "Notes", pages: "", fileSize: ""
+  });
+
+  const [newManualAttendance, setNewManualAttendance] = useState({
+    studentId: "", date: new Date().toISOString().split("T")[0], status: "Present", checkInTime: "09:00 AM", checkOutTime: "04:00 PM"
+  });
+
+  const [newResultCard, setNewResultCard] = useState({
+    studentId: "", examName: "Unit Test 3", subject: "Physics", obtained: "", max: "100"
+  });
+
+  const [newNoticeBroadcast, setNewNoticeBroadcast] = useState({
+    title: "", content: "", category: "General"
+  });
+
+  const [fileAttachment, setFileAttachment] = useState({ name: "", data: "" });
+
   // CRUD Forms
   const [newUser, setNewUser] = useState({
     name: "", email: "", phone: "", role: "student",
     rollNumber: "", classLevel: 10, batch: "Batch A",
-    biometricId: "", parentEmail: ""
+    biometricId: "", parentEmail: "", fatherPhone: "",
+    homeAddress: "", password: "", profilePhoto: "", status: "Active"
   });
   
   const [newFee, setNewFee] = useState({ studentId: "", amount: "", dueDate: "", description: "" });
@@ -95,6 +123,8 @@ export default function AdminPortal() {
 
   const [idCardSimulating, setIdCardSimulating] = useState(null);
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [showEditStudentModal, setShowEditStudentModal] = useState(false);
   const [classFilter, setClassFilter] = useState("all");
 
   useEffect(() => {
@@ -112,6 +142,10 @@ export default function AdminPortal() {
       const res = await fetch(`${API_BASE_URL}/api/sams/admin/analytics`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
+      if (res.status === 401) {
+        handleLogout();
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setDashboardData(data);
@@ -283,7 +317,8 @@ export default function AdminPortal() {
         setNewUser({
           name: "", email: "", phone: "", role: "student",
           rollNumber: "", classLevel: 10, batch: "Batch A",
-          biometricId: "", parentEmail: ""
+          biometricId: "", parentEmail: "", fatherPhone: "",
+          homeAddress: "", password: "", profilePhoto: "", status: "Active"
         });
         fetchAnalytics(token);
       } else {
@@ -294,6 +329,211 @@ export default function AdminPortal() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const createHomework = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sams/admin/homework`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...newHomework,
+          attachmentName: fileAttachment.name,
+          attachmentData: fileAttachment.data,
+        })
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        setMessage("Homework assignment uploaded and student email notifications dispatched successfully!");
+        setNewHomework({ title: "", description: "", subject: "Physics", classLevel: 10, batch: "Batch A", dueDate: "", teacherName: "" });
+        setFileAttachment({ name: "", data: "" });
+        fetchAnalytics(token);
+      } else {
+        setError(resData.message || "Failed to upload homework.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to upload homework.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createStudyMaterial = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sams/admin/study-materials`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...newStudyMaterial,
+          attachmentName: fileAttachment.name,
+          attachmentData: fileAttachment.data,
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage("Study material notes uploaded successfully!");
+        setNewStudyMaterial({ title: "", description: "", subject: "Physics", classLevel: 10, batch: "All Batches", materialType: "Notes", pages: "", fileSize: "" });
+        setFileAttachment({ name: "", data: "" });
+        fetchAnalytics(token);
+      } else {
+        setError(data.message || "Failed to upload study material.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to upload study material.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markAttendanceManually = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sams/admin/attendance`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(newManualAttendance)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage(`Manually recorded attendance status for student successfully!`);
+        setNewManualAttendance(prev => ({ ...prev, studentId: "" }));
+        fetchAnalytics(token);
+      } else {
+        setError(data.message || "Failed to mark attendance.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to mark attendance.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendFeeReminder = async (invoiceId) => {
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sams/admin/fees/remind/${invoiceId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage("Direct parent & student fee email reminder dispatched successfully!");
+        fetchAnalytics(token);
+      } else {
+        setError(data.message || "Failed to send fee reminder.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to send fee reminder.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const uploadResultCard = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sams/admin/results`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          studentId: newResultCard.studentId,
+          examName: newResultCard.examName,
+          marks: [{
+            subject: newResultCard.subject,
+            obtained: parseInt(newResultCard.obtained),
+            max: parseInt(newResultCard.max)
+          }]
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage("Student marks scorecard uploaded and email alerts dispatched to parents successfully!");
+        setNewResultCard(prev => ({ ...prev, studentId: "", obtained: "" }));
+        fetchAnalytics(token);
+      } else {
+        setError(data.message || "Failed to upload marks results.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to upload marks results.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const broadcastNotice = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sams/admin/notices`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(newNoticeBroadcast)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage("Announcement notice bulletin broadcasted and bulk emails dispatched successfully!");
+        setNewNoticeBroadcast({ title: "", content: "", category: "General" });
+        fetchAnalytics(token);
+      } else {
+        setError(data.message || "Failed to broadcast notice bulletin.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to broadcast notice.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFileAttachment({
+        name: file.name,
+        data: reader.result // Base64 Data URL
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   const deleteUser = async (id) => {
@@ -307,6 +547,65 @@ export default function AdminPortal() {
       fetchAnalytics(token);
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startEditingStudent = (student) => {
+    setEditingStudent({
+      _id: student._id,
+      name: student.name || "",
+      email: student.email || "",
+      phone: student.phone || "",
+      rollNumber: student.rollNumber || "",
+      classLevel: student.classLevel || 10,
+      batch: student.batch || "Batch A",
+      biometricId: student.biometricId || "",
+      parentEmail: student.parentEmail || "",
+      dob: student.dob || "",
+      gender: student.gender || "",
+      bloodGroup: student.bloodGroup || "",
+      aadhaarNo: student.aadhaarNo || "",
+      homeAddress: student.homeAddress || "",
+      fatherName: student.fatherName || "",
+      fatherPhone: student.fatherPhone || "",
+      motherName: student.motherName || "",
+      motherPhone: student.motherPhone || "",
+      profilePhoto: student.profilePhoto || "",
+      status: student.status || "Active",
+      password: ""
+    });
+    setShowEditStudentModal(true);
+  };
+
+  const handleEditUser = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sams/admin/users/${editingStudent._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(editingStudent)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage(`Successfully updated student profile for ${editingStudent.name}!`);
+        setShowEditStudentModal(false);
+        setEditingStudent(null);
+        fetchAnalytics(token);
+      } else {
+        setError(data.message || "Failed to update user.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to connect to backend for updating student.");
     } finally {
       setLoading(false);
     }
@@ -735,9 +1034,14 @@ export default function AdminPortal() {
           {[
             { id: "overview", label: "Analytics Overview" },
             { id: "students", label: "Students CRUD" },
+            { id: "manualAttendance", label: "Manual Attendance" },
+            { id: "homework", label: "Homework Upload" },
+            { id: "study", label: "Study Materials" },
+            { id: "billing", label: "Tuition Fees" },
+            { id: "results", label: "Results & Marks" },
+            { id: "notices", label: "Notice Broadcast" },
             { id: "admissions", label: "Admissions Inquiry" },
             { id: "biometric", label: "Biometric Logs" },
-            { id: "billing", label: "Tuition Fees" },
             { id: "schedules", label: "Class Schedules" },
             { id: "logs", label: "Audit Activity Logs" },
           ].map((t) => {
@@ -1066,6 +1370,12 @@ export default function AdminPortal() {
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <button
+                                  onClick={() => startEditingStudent(student)}
+                                  className="px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-wider text-[#0a1835] bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer"
+                                >
+                                  ✏️ EDIT
+                                </button>
+                                <button
                                   onClick={() => printIDCard(student)}
                                   className="px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-wider text-[#0a1835] bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer"
                                 >
@@ -1086,7 +1396,7 @@ export default function AdminPortal() {
                               </div>
                             </div>
                             {/* Detail Row */}
-                            <div className="px-5 py-2.5 bg-slate-50/40 grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div className="px-5 py-2.5 bg-slate-50/40 grid grid-cols-2 md:grid-cols-4 gap-3 border-b border-slate-100">
                               <div className="text-left">
                                 <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Email</p>
                                 <p className="text-[10px] font-semibold text-[#0a1835] truncate">{student.email}</p>
@@ -1105,6 +1415,17 @@ export default function AdminPortal() {
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                                   {student.biometricId || "RFID-9988-77"}
                                 </p>
+                              </div>
+                            </div>
+                            {/* Additional Details Row */}
+                            <div className="px-5 py-2.5 bg-slate-50/20 grid grid-cols-1 md:grid-cols-2 gap-3 animate-fade-in">
+                              <div className="text-left">
+                                <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Parent Mobile / Contact</p>
+                                <p className="text-[10px] font-semibold text-[#0a1835]">{student.fatherPhone || student.motherPhone || "N/A"}</p>
+                              </div>
+                              <div className="text-left col-span-1">
+                                <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Home Address (Optional)</p>
+                                <p className="text-[10px] font-semibold text-[#0a1835] truncate" title={student.homeAddress}>{student.homeAddress || "N/A"}</p>
                               </div>
                             </div>
                           </div>
@@ -1307,12 +1628,20 @@ export default function AdminPortal() {
                                     fee.status === "Paid" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
                                   }`}>{fee.status}</span>
                                   {fee.status === "Unpaid" && (
-                                    <button
-                                      onClick={() => markInvoicePaid(fee._id)}
-                                      className="block px-2.5 py-1 text-[8px] font-extrabold uppercase text-white bg-emerald-600 hover:bg-emerald-700 rounded-md shadow cursor-pointer transition-all"
-                                    >
-                                      MARK PAID
-                                    </button>
+                                    <div className="flex gap-2 justify-end">
+                                      <button
+                                        onClick={() => markInvoicePaid(fee._id)}
+                                        className="px-2.5 py-1 text-[8px] font-extrabold uppercase text-white bg-emerald-600 hover:bg-emerald-700 rounded-md shadow cursor-pointer transition-all"
+                                      >
+                                        MARK PAID
+                                      </button>
+                                      <button
+                                        onClick={() => sendFeeReminder(fee._id)}
+                                        className="px-2.5 py-1 text-[8px] font-extrabold uppercase text-white bg-[#0c46c4] hover:bg-blue-800 rounded-md shadow cursor-pointer transition-all"
+                                      >
+                                        REMIND ✉
+                                      </button>
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -1411,6 +1740,418 @@ export default function AdminPortal() {
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded text-brand-text-navy placeholder-slate-400 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow/50 transition-all"
                 />
                 <button type="submit" className="w-full py-2.5 text-xs font-extrabold text-brand-blue bg-brand-yellow hover:bg-amber-400 rounded-xl shadow shadow-brand-yellow/15 uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer">SCHEDULE ROUTINE</button>
+              </form>
+            </div>
+          )}
+
+          {/* ========================================================
+              TAB CONTENT: MANUAL ATTENDANCE
+              ======================================================== */}
+          {activeTab === "manualAttendance" && (
+            <div className="p-6 bg-white border border-slate-200/50 rounded-2xl shadow-sm text-left space-y-4">
+              <h4 className="text-xs font-black uppercase tracking-wider text-brand-blue border-b border-slate-100 pb-2.5">Manual Attendance Ledger Punch</h4>
+              <form onSubmit={markAttendanceManually} className="space-y-4 text-xs font-semibold text-slate-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Select Student</label>
+                    <select
+                      required
+                      value={newManualAttendance.studentId}
+                      onChange={e => setNewManualAttendance({...newManualAttendance, studentId: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-slate-900"
+                    >
+                      <option value="">-- Choose Student --</option>
+                      {usersList.filter(u => u.role === "student").map(s => (
+                        <option key={s._id} value={s._id}>{s.name} (Std {s.classLevel} - Roll {s.rollNumber})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Attendance Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={newManualAttendance.date}
+                      onChange={e => setNewManualAttendance({...newManualAttendance, date: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Status</label>
+                    <select
+                      value={newManualAttendance.status}
+                      onChange={e => setNewManualAttendance({...newManualAttendance, status: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-slate-900"
+                    >
+                      <option value="Present">Present</option>
+                      <option value="Absent">Absent</option>
+                      <option value="Late">Late</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Check-In Time</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 09:00 AM"
+                      value={newManualAttendance.checkInTime}
+                      onChange={e => setNewManualAttendance({...newManualAttendance, checkInTime: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Check-Out Time</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 04:00 PM"
+                      value={newManualAttendance.checkOutTime}
+                      onChange={e => setNewManualAttendance({...newManualAttendance, checkOutTime: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900"
+                    />
+                  </div>
+                </div>
+                <button type="submit" className="w-full py-3 bg-[#0a1835] text-white hover:bg-slate-800 rounded-xl font-bold uppercase tracking-widest cursor-pointer shadow">PUNCH MANUAL ATTENDANCE</button>
+              </form>
+            </div>
+          )}
+
+          {/* ========================================================
+              TAB CONTENT: HOMEWORK UPLOAD
+              ======================================================== */}
+          {activeTab === "homework" && (
+            <div className="p-6 bg-white border border-slate-200/50 rounded-2xl shadow-sm text-left space-y-4">
+              <h4 className="text-xs font-black uppercase tracking-wider text-brand-blue border-b border-slate-100 pb-2.5">Upload Homework Assignments</h4>
+              <form onSubmit={createHomework} className="space-y-4 text-xs font-semibold text-slate-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Assignment Title</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Solve Electrostatics Ch.2 Q1-Q15"
+                      value={newHomework.title}
+                      onChange={e => setNewHomework({...newHomework, title: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Subject</label>
+                    <select
+                      value={newHomework.subject}
+                      onChange={e => setNewHomework({...newHomework, subject: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-slate-900"
+                    >
+                      <option value="Physics">Physics</option>
+                      <option value="Mathematics">Mathematics</option>
+                      <option value="Chemistry">Chemistry</option>
+                      <option value="Biology">Biology</option>
+                      <option value="English">English</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Standard Class</label>
+                    <select
+                      value={newHomework.classLevel}
+                      onChange={e => setNewHomework({...newHomework, classLevel: parseInt(e.target.value)})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-slate-900"
+                    >
+                      {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => <option key={n} value={n}>Standard {n}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Batch</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Batch A"
+                      value={newHomework.batch}
+                      onChange={e => setNewHomework({...newHomework, batch: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Due Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={newHomework.dueDate}
+                      onChange={e => setNewHomework({...newHomework, dueDate: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Teacher Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Dr. Ramesh Sharma"
+                      value={newHomework.teacherName}
+                      onChange={e => setNewHomework({...newHomework, teacherName: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Attachment File (PDF/Image)</label>
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 cursor-pointer animate-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Assignment Description</label>
+                  <textarea
+                    placeholder="Provide detailed tasks and descriptions..."
+                    value={newHomework.description}
+                    onChange={e => setNewHomework({...newHomework, description: e.target.value})}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 h-20 focus:outline-none"
+                  />
+                </div>
+                <button type="submit" className="w-full py-3 bg-[#0a1835] text-white hover:bg-slate-800 rounded-xl font-bold uppercase tracking-widest cursor-pointer shadow">UPLOAD HOMEWORK ASSIGNMENT</button>
+              </form>
+            </div>
+          )}
+
+          {/* ========================================================
+              TAB CONTENT: STUDY MATERIALS
+              ======================================================== */}
+          {activeTab === "study" && (
+            <div className="p-6 bg-white border border-slate-200/50 rounded-2xl shadow-sm text-left space-y-4">
+              <h4 className="text-xs font-black uppercase tracking-wider text-brand-blue border-b border-slate-100 pb-2.5">Upload Study Notes & Worksheets</h4>
+              <form onSubmit={createStudyMaterial} className="space-y-4 text-xs font-semibold text-slate-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Material Title</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Integral Calculus formula sheet"
+                      value={newStudyMaterial.title}
+                      onChange={e => setNewStudyMaterial({...newStudyMaterial, title: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Subject</label>
+                    <select
+                      value={newStudyMaterial.subject}
+                      onChange={e => setNewStudyMaterial({...newStudyMaterial, subject: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-slate-900"
+                    >
+                      <option value="Physics">Physics</option>
+                      <option value="Mathematics">Mathematics</option>
+                      <option value="Chemistry">Chemistry</option>
+                      <option value="Biology">Biology</option>
+                      <option value="English">English</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Standard Class</label>
+                    <select
+                      value={newStudyMaterial.classLevel}
+                      onChange={e => setNewStudyMaterial({...newStudyMaterial, classLevel: parseInt(e.target.value)})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-slate-900"
+                    >
+                      {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => <option key={n} value={n}>Standard {n}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Batch Allocation</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. All Batches"
+                      value={newStudyMaterial.batch}
+                      onChange={e => setNewStudyMaterial({...newStudyMaterial, batch: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Material Type</label>
+                    <select
+                      value={newStudyMaterial.materialType}
+                      onChange={e => setNewStudyMaterial({...newStudyMaterial, materialType: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-slate-900"
+                    >
+                      <option value="Notes">Notes</option>
+                      <option value="Worksheet">Worksheet</option>
+                      <option value="Syllabus">Syllabus</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Pages Count</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 12 pages"
+                      value={newStudyMaterial.pages}
+                      onChange={e => setNewStudyMaterial({...newStudyMaterial, pages: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">File Size</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1.2 MB"
+                      value={newStudyMaterial.fileSize}
+                      onChange={e => setNewStudyMaterial({...newStudyMaterial, fileSize: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Upload PDF/Image</label>
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 cursor-pointer animate-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Brief Description</label>
+                  <textarea
+                    placeholder="Brief description of the material..."
+                    value={newStudyMaterial.description}
+                    onChange={e => setNewStudyMaterial({...newStudyMaterial, description: e.target.value})}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 h-20 focus:outline-none"
+                  />
+                </div>
+                <button type="submit" className="w-full py-3 bg-[#0a1835] text-white hover:bg-slate-800 rounded-xl font-bold uppercase tracking-widest cursor-pointer shadow">UPLOAD STUDY MATERIAL</button>
+              </form>
+            </div>
+          )}
+
+          {/* ========================================================
+              TAB CONTENT: RESULTS
+              ======================================================== */}
+          {activeTab === "results" && (
+            <div className="p-6 bg-white border border-slate-200/50 rounded-2xl shadow-sm text-left space-y-4">
+              <h4 className="text-xs font-black uppercase tracking-wider text-brand-blue border-b border-slate-100 pb-2.5">Upload Student Marks Result Cards</h4>
+              <form onSubmit={uploadResultCard} className="space-y-4 text-xs font-semibold text-slate-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Select Student</label>
+                    <select
+                      required
+                      value={newResultCard.studentId}
+                      onChange={e => setNewResultCard({...newResultCard, studentId: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-slate-900"
+                    >
+                      <option value="">-- Choose Student --</option>
+                      {usersList.filter(u => u.role === "student").map(s => (
+                        <option key={s._id} value={s._id}>{s.name} (Std {s.classLevel} - Roll {s.rollNumber})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Exam / Test Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Unit Test 3"
+                      value={newResultCard.examName}
+                      onChange={e => setNewResultCard({...newResultCard, examName: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Subject</label>
+                    <select
+                      value={newResultCard.subject}
+                      onChange={e => setNewResultCard({...newResultCard, subject: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-slate-900"
+                    >
+                      <option value="Physics">Physics</option>
+                      <option value="Mathematics">Mathematics</option>
+                      <option value="Chemistry">Chemistry</option>
+                      <option value="Biology">Biology</option>
+                      <option value="English">English</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Marks Obtained</label>
+                    <input
+                      type="number"
+                      required
+                      placeholder="Obtained marks"
+                      value={newResultCard.obtained}
+                      onChange={e => setNewResultCard({...newResultCard, obtained: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Maximum Marks</label>
+                    <input
+                      type="number"
+                      required
+                      placeholder="Max marks"
+                      value={newResultCard.max}
+                      onChange={e => setNewResultCard({...newResultCard, max: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono"
+                    />
+                  </div>
+                </div>
+                <button type="submit" className="w-full py-3 bg-[#0a1835] text-white hover:bg-slate-800 rounded-xl font-bold uppercase tracking-widest cursor-pointer shadow">UPLOAD MARKS & DISPATCH ALERTS</button>
+              </form>
+            </div>
+          )}
+
+          {/* ========================================================
+              TAB CONTENT: NOTICE BROADCAST
+              ======================================================== */}
+          {activeTab === "notices" && (
+            <div className="p-6 bg-white border border-slate-200/50 rounded-2xl shadow-sm text-left space-y-4">
+              <h4 className="text-xs font-black uppercase tracking-wider text-brand-blue border-b border-slate-100 pb-2.5">Notice Bulletin Broadcast Console</h4>
+              <form onSubmit={broadcastNotice} className="space-y-4 text-xs font-semibold text-slate-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Notice Title</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Republic Day Celebration"
+                      value={newNoticeBroadcast.title}
+                      onChange={e => setNewNoticeBroadcast({...newNoticeBroadcast, title: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Category</label>
+                    <select
+                      value={newNoticeBroadcast.category}
+                      onChange={e => setNewNoticeBroadcast({...newNoticeBroadcast, category: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-slate-900"
+                    >
+                      <option value="General">General Notice</option>
+                      <option value="Student">Student Notice</option>
+                      <option value="Teacher">Teacher Notice</option>
+                      <option value="Parent">Parent Notice</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[9px] uppercase text-slate-400 mb-1.5 font-extrabold">Notice Content Bulletin</label>
+                  <textarea
+                    required
+                    placeholder="Input complete bulletin notices description..."
+                    value={newNoticeBroadcast.content}
+                    onChange={e => setNewNoticeBroadcast({...newNoticeBroadcast, content: e.target.value})}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 h-36 focus:outline-none"
+                  />
+                </div>
+                <button type="submit" className="w-full py-3 bg-[#0a1835] text-white hover:bg-slate-800 rounded-xl font-bold uppercase tracking-widest cursor-pointer shadow">BROADCAST BULLETIN & BULK EMAIL</button>
               </form>
             </div>
           )}
@@ -1532,7 +2273,7 @@ export default function AdminPortal() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Class</label>
                   <select
@@ -1550,23 +2291,62 @@ export default function AdminPortal() {
                     className="w-full px-3.5 py-2.5 text-xs rounded-lg"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">RFID Card ID</label>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Parent Phone / Mobile</label>
                   <input
-                    type="text" placeholder="RFID-XXXX-XX"
-                    value={newUser.biometricId} onChange={(e) => setNewUser({...newUser, biometricId: e.target.value})}
+                    type="text" placeholder="Parent contact number"
+                    value={newUser.fatherPhone} onChange={(e) => setNewUser({...newUser, fatherPhone: e.target.value})}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Parent Email Address</label>
+                  <input
+                    type="email" placeholder="parent@email.com"
+                    value={newUser.parentEmail} onChange={(e) => setNewUser({...newUser, parentEmail: e.target.value})}
                     className="w-full px-3.5 py-2.5 text-xs rounded-lg"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Parent Email Address</label>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Home Address (Optional)</label>
                 <input
-                  type="email" placeholder="parent@email.com"
-                  value={newUser.parentEmail} onChange={(e) => setNewUser({...newUser, parentEmail: e.target.value})}
+                  type="text" placeholder="Home Address"
+                  value={newUser.homeAddress} onChange={(e) => setNewUser({...newUser, homeAddress: e.target.value})}
                   className="w-full px-3.5 py-2.5 text-xs rounded-lg"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 animate-fade-in">
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Portal Password</label>
+                  <input
+                    type="password" required placeholder="Initial password"
+                    value={newUser.password || ""} onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-lg border border-slate-200 bg-slate-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Profile Photo (Optional)</label>
+                  <input
+                    type="file" accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setNewUser({...newUser, profilePhoto: reader.result});
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full px-3.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50"
+                  />
+                </div>
               </div>
 
               {/* Modal Actions */}
@@ -1583,6 +2363,174 @@ export default function AdminPortal() {
                   className="flex-[2] py-3 text-xs font-extrabold uppercase tracking-widest text-[#0a1835] bg-brand-yellow hover:bg-amber-400 rounded-xl shadow-md shadow-brand-yellow/20 transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer"
                 >
                   Register Student
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+      {/* ══════ EDIT STUDENT MODAL POPUP ══════ */}
+      {showEditStudentModal && editingStudent && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-brand-blue/10 overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-[#0a1835] flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-black text-white uppercase tracking-wider">Edit Student Profile</h3>
+                <p className="text-[9px] text-slate-400 font-semibold mt-0.5">Modify student parameters and click Save Changes</p>
+              </div>
+              <button
+                onClick={() => { setShowEditStudentModal(false); setEditingStudent(null); }}
+                className="text-white/60 hover:text-white hover:bg-white/10 p-2 rounded-lg transition cursor-pointer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleEditUser} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-left">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Full Name</label>
+                  <input
+                    type="text" required placeholder="Student name"
+                    value={editingStudent.name} onChange={(e) => setEditingStudent({...editingStudent, name: e.target.value})}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Email Address</label>
+                  <input
+                    type="email" required placeholder="student@email.com"
+                    value={editingStudent.email} onChange={(e) => setEditingStudent({...editingStudent, email: e.target.value})}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-lg"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Phone Number</label>
+                  <input
+                    type="text" placeholder="Mobile number"
+                    value={editingStudent.phone} onChange={(e) => setEditingStudent({...editingStudent, phone: e.target.value})}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Roll Number</label>
+                  <input
+                    type="text" required placeholder="SA-2026-001"
+                    value={editingStudent.rollNumber} onChange={(e) => setEditingStudent({...editingStudent, rollNumber: e.target.value})}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-lg"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Class</label>
+                  <select
+                    value={editingStudent.classLevel} onChange={(e) => setEditingStudent({...editingStudent, classLevel: parseInt(e.target.value)})}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-lg cursor-pointer"
+                  >
+                    {[1,2,3,4,5,6,7,8,9,10,11,12].map(n=>(<option key={n} value={n}>Class {n}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Batch</label>
+                  <input
+                    type="text" placeholder="Batch A"
+                    value={editingStudent.batch} onChange={(e) => setEditingStudent({...editingStudent, batch: e.target.value})}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-lg"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Parent Phone / Mobile</label>
+                  <input
+                    type="text" placeholder="Parent contact number"
+                    value={editingStudent.fatherPhone} onChange={(e) => setEditingStudent({...editingStudent, fatherPhone: e.target.value})}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Parent Email Address</label>
+                  <input
+                    type="email" placeholder="parent@email.com"
+                    value={editingStudent.parentEmail} onChange={(e) => setEditingStudent({...editingStudent, parentEmail: e.target.value})}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-lg"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Home Address (Optional)</label>
+                <input
+                  type="text" placeholder="Home Address"
+                  value={editingStudent.homeAddress} onChange={(e) => setEditingStudent({...editingStudent, homeAddress: e.target.value})}
+                  className="w-full px-3.5 py-2.5 text-xs rounded-lg"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 animate-fade-in">
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Reset Password</label>
+                  <input
+                    type="password" placeholder="New password"
+                    value={editingStudent.password || ""} onChange={(e) => setEditingStudent({...editingStudent, password: e.target.value})}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-lg border border-slate-200 bg-slate-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Account Status</label>
+                  <select
+                    value={editingStudent.status || "Active"} onChange={(e) => setEditingStudent({...editingStudent, status: e.target.value})}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-lg border border-slate-200 bg-slate-50 cursor-pointer"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Profile Photo</label>
+                  <input
+                    type="file" accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setEditingStudent({...editingStudent, profilePhoto: reader.result});
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full px-3.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50"
+                  />
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowEditStudentModal(false); setEditingStudent(null); }}
+                  className="flex-1 py-3 text-xs font-extrabold uppercase tracking-wider text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-[2] py-3 text-xs font-extrabold uppercase tracking-widest text-[#0a1835] bg-brand-yellow hover:bg-amber-400 rounded-xl shadow-md shadow-brand-yellow/20 transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>
