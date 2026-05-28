@@ -1,8 +1,9 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Admin Portal | Sharda Academy SAMS Console",
-  description: "Official administration console and database manager dashboard of Sharda Academy.",
+  title: "Admin Portal | Sharda Academy SAMS Portal",
+  description:
+    "Official administration portal and database manager dashboard of Sharda Academy.",
   icons: {
     icon: "/logo_cropped.png",
     shortcut: "/logo_cropped.png",
@@ -15,16 +16,18 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Syne:wght@700;800&display=swap"
           rel="stylesheet"
         />
         <link rel="icon" href="/logo_cropped.png" type="image/png" />
       </head>
-      <body style={{ margin: 0, padding: 0 }}>
-        {children}
-      </body>
+      <body style={{ margin: 0, padding: 0 }}>{children}</body>
     </html>
   );
 }

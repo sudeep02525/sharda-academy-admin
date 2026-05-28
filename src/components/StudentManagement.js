@@ -206,9 +206,13 @@ export default function StudentManagement() {
               className={inputCls}
             >
               <option value="">All Classes</option>
-              {[...Array(12)].map((_, i) => (
-                <option key={i + 1} value={i + 1}>Class {i + 1}</option>
-              ))}
+              {[...Array(12)].map((_, i) => {
+                const cls = i + 1;
+                let label = `Class ${cls}`;
+                if (cls === 10) label = `Class 10 (SSC)`;
+                if (cls === 12) label = `Class 12 (HSC)`;
+                return <option key={cls} value={cls}>{label}</option>;
+              })}
             </select>
             <input
               type="text"
@@ -296,7 +300,13 @@ export default function StudentManagement() {
                     <FormField label="Class" required>
                       <select name="classLevel" value={formData.classLevel} onChange={handleInputChange} required className={inputCls}>
                         <option value="">Select Class</option>
-                        {[...Array(12)].map((_, i) => <option key={i + 1} value={i + 1}>Class {i + 1}</option>)}
+                        {[...Array(12)].map((_, i) => {
+                          const cls = i + 1;
+                          let label = `Class ${cls}`;
+                          if (cls === 10) label = `Class 10 (SSC)`;
+                          if (cls === 12) label = `Class 12 (HSC)`;
+                          return <option key={cls} value={cls}>{label}</option>;
+                        })}
                       </select>
                     </FormField>
                     <FormField label="Batch" required>
