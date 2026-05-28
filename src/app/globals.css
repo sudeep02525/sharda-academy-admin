@@ -324,3 +324,12 @@ input::placeholder, textarea::placeholder {
   border-color: #F4B63D !important;
   box-shadow: 0 0 10px rgba(244, 182, 61, 0.3) !important;
 }
+
+/* Hide scrollbar utility class */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}

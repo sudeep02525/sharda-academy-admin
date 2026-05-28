@@ -105,6 +105,53 @@ const getSidebarIcon = (id, className) => {
           />
         </svg>
       );
+    case "pendingFees":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
+          className={className}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+          />
+        </svg>
+      );
+    case "manualAttendance":
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.03 0 1.9.693 2.166 1.638m-7.377 2.24A2.25 2.25 0 0 1 7.5 6.108V16.5a2.25 2.25 0 0 0 2.25 2.25h1.5m3 0h3" />
+        </svg>
+      );
+    case "homework":
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
+        </svg>
+      );
+    case "study":
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+        </svg>
+      );
+    case "results":
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.57 50.57 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0a50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M12 2.25V4.5m0 16.354V22.5" />
+        </svg>
+      );
+    case "notices":
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" />
+        </svg>
+      );
     case "logs":
       return (
         <svg
@@ -146,6 +193,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function AdminPortal() {
   const [token, setToken] = useState("");
+  const [adminName, setAdminName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
@@ -166,7 +214,7 @@ export default function AdminPortal() {
   const [activeTab, setActiveTab] = useState("overview");
 
   // Collapsible sidebar state
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Simulate biometric punch state
   const [simBiometricId, setSimBiometricId] = useState("RFID-9988-77");
@@ -337,8 +385,10 @@ export default function AdminPortal() {
 
   useEffect(() => {
     const savedToken = localStorage.getItem("admin_token");
+    const savedName = localStorage.getItem("admin_name") || "Administrator";
     if (savedToken) {
       setToken(savedToken);
+      setAdminName(savedName);
       setStep(3);
       fetchAnalytics(savedToken);
     }
@@ -398,6 +448,7 @@ export default function AdminPortal() {
         localStorage.setItem("admin_token", data.token);
         localStorage.setItem("admin_name", data.user.name);
         setToken(data.token);
+        setAdminName(data.user.name);
         setStep(3);
         fetchAnalytics(data.token);
       } else {
@@ -475,6 +526,7 @@ export default function AdminPortal() {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_name");
     setToken("");
+    setAdminName("");
     setStep(1);
     setAuthView("login");
     setEmail("");
@@ -1556,39 +1608,48 @@ export default function AdminPortal() {
 
       {/* 🖥️ Collapsible Sidebar for Admin ERP */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 md:sticky md:top-0 md:h-screen shrink-0 border-r border-white/10 ${
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 md:sticky md:top-0 md:h-screen shrink-0 border-r border-white/10 bg-[#0a1835] text-white overflow-hidden ${
           sidebarOpen
             ? "w-64 translate-x-0"
             : "w-64 -translate-x-full md:w-16 md:translate-x-0"
         }`}
       >
+        {/* Soft floating background spheres in dashboard sidebar */}
+        <div
+          className="absolute -top-20 -left-20 w-60 h-60 bg-gradient-to-br from-[#f1af3c]/15 to-amber-500/10 rounded-full pointer-events-none animate-pulse-glow"
+          style={{ filter: "blur(70px)" }}
+        ></div>
+        <div
+          className="absolute -bottom-20 -right-20 w-64 h-64 bg-gradient-to-tr from-[#0f2347]/45 to-[#f1af3c]/10 rounded-full pointer-events-none"
+          style={{ filter: "blur(80px)" }}
+        ></div>
+
         {sidebarOpen ? (
-          <div className="p-4 flex items-center justify-between border-b border-white/10">
-            <div className="flex items-center gap-2">
+          <div className="px-4 py-4 border-b border-white/10 relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
               <img
                 src="/logo.png"
                 alt="Logo"
-                className="w-8 h-8"
+                className="w-9 h-9 object-contain flex-shrink-0"
                 onError={(e) => {
                   e.target.style.display = "none";
                 }}
-                style={{ objectFit: "contain" }}
               />
-              <div>
-                <h1 className="text-xs font-black text-white uppercase tracking-tight">
+              <div className="text-left min-w-0">
+                <span className="block text-[12.5px] font-black text-white uppercase tracking-wider leading-none whitespace-nowrap">
                   SHARDA ACADEMY
-                </h1>
-                <div className="flex items-center gap-1 mt-0.5">
+                </span>
+                <div className="flex items-center gap-1 mt-1 whitespace-nowrap">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <p className="text-[7.5px] font-bold text-emerald-400 uppercase tracking-widest leading-none">
+                  <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest leading-none">
                     Portal Online
-                  </p>
+                  </span>
                 </div>
               </div>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-1.5 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer transition-all hover:bg-white/10"
+              className="p-1.5 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer transition-all hover:bg-white/10 ml-2 flex-shrink-0"
               aria-label="Collapse Sidebar"
             >
               <svg
@@ -1608,15 +1669,14 @@ export default function AdminPortal() {
             </button>
           </div>
         ) : (
-          <div className="p-3.5 flex flex-col items-center gap-3 border-b border-white/10">
+          <div className="p-3.5 flex flex-col items-center gap-3 border-b border-white/10 relative z-10">
             <img
               src="/logo.png"
               alt="Logo"
-              className="w-8 h-8"
+              className="w-9 h-9 object-contain flex-shrink-0"
               onError={(e) => {
                 e.target.style.display = "none";
               }}
-              style={{ objectFit: "contain" }}
             />
             <button
               onClick={() => setSidebarOpen(true)}
@@ -1641,7 +1701,7 @@ export default function AdminPortal() {
           </div>
         )}
 
-        <nav className="p-3 flex-grow space-y-1.5 overflow-y-auto">
+        <nav className="p-3 flex-grow space-y-1.5 overflow-y-auto no-scrollbar relative z-10">
           {[
             { id: "overview", label: "Analytics Overview" },
             { id: "students", label: "Students CRUD" },
@@ -1652,7 +1712,6 @@ export default function AdminPortal() {
             { id: "results", label: "Results & Marks" },
             { id: "notices", label: "Notice Broadcast" },
             { id: "admissions", label: "Admissions Inquiry" },
-            { id: "biometric", label: "Biometric Logs" },
             { id: "schedules", label: "Class Schedules" },
             { id: "logs", label: "Audit Activity Logs" },
           ].map((t) => {
@@ -1685,28 +1744,33 @@ export default function AdminPortal() {
           })}
         </nav>
 
-        <div className="p-3 border-t border-white/10">
+        {/* Sidebar user pill matching student bottom */}
+        <div className="p-4 border-t border-white/10 bg-[#030814]/30 relative z-10">
           {sidebarOpen ? (
-            <button
-              onClick={handleLogout}
-              className="w-full py-2 px-3.5 rounded-xl border border-red-500/35 bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white hover:border-transparent text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer hover:shadow-lg hover:shadow-red-600/15"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2.2}
-                stroke="currentColor"
-                className="h-4.5 w-4.5 flex-shrink-0"
+            <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white/5 border border-white/5">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-brand-yellow text-[#0a1835] flex items-center justify-center font-black text-sm flex-shrink-0 overflow-hidden">
+                  {adminName?.[0]?.toUpperCase() || "A"}
+                </div>
+                <div className="text-left min-w-0">
+                  <span className="text-xs font-bold truncate block leading-none text-white" style={{ color: '#ffffff' }}>
+                    {adminName?.toUpperCase() || "ADMINISTRATOR"}
+                  </span>
+                  <p className="text-[10px] font-semibold truncate mt-1.5" style={{ color: '#cbd5e1' }}>
+                    Academy Admin
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-600 hover:text-white hover:border-transparent transition-all cursor-pointer flex-shrink-0"
+                title="Sign Out"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"
-                />
-              </svg>
-              <span>Sign Out</span>
-            </button>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+                </svg>
+              </button>
+            </div>
           ) : (
             <div className="flex justify-center">
               <button
@@ -1765,15 +1829,13 @@ export default function AdminPortal() {
                   ? "STUDENTS CRUD"
                   : activeTab === "admissions"
                     ? "ADMISSIONS INQUIRY"
-                    : activeTab === "biometric"
-                      ? "BIOMETRIC LOGS"
-                      : activeTab === "billing"
-                        ? "TUITION FEES"
-                        : activeTab === "schedules"
-                          ? "CLASS SCHEDULES"
-                          : activeTab === "logs"
-                            ? "AUDIT ACTIVITY LOGS"
-                            : activeTab.toUpperCase()}
+                    : activeTab === "billing"
+                      ? "TUITION FEES"
+                      : activeTab === "schedules"
+                        ? "CLASS SCHEDULES"
+                        : activeTab === "logs"
+                          ? "AUDIT ACTIVITY LOGS"
+                          : activeTab.toUpperCase()}
             </h2>
           </div>
           <div className="flex items-center gap-2">
@@ -1907,149 +1969,174 @@ export default function AdminPortal() {
           {/* ========================================================
               TAB CONTENT: OVERVIEW
               ======================================================== */}
-          {activeTab === "overview" && (
+          {activeTab === "overview" && (() => {
+            const students = usersList.filter((u) => u.role === "student");
+            const unpaidFees = feesList.filter((f) => f.status === "Unpaid");
+            const paidFees = feesList.filter((f) => f.status === "Paid");
+            const recentActivity = activityLogs.slice(0, 6);
+            const recentStudents = students.slice(0, 5);
+            const recentInquiries = inquiriesList.slice(0, 4);
+            const totalUnpaid = unpaidFees.reduce((sum, f) => sum + (f.amount || 0), 0);
+
+            return (
             <div className="space-y-6">
-              {/* Quick Summary Widgets */}
+              {/* ── Row 1: 3 KPI cards ── */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {/* Total Students Card (Blue Wing Theme) */}
-                <div className="p-5 bg-white border-l-4 border-l-[#0c46c4] border-t border-r border-b border-brand-blue/8 rounded-2xl shadow-sm flex items-center justify-between hover-glow transition-all duration-300 cursor-pointer">
-                  <div className="space-y-1.5 text-left">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                      Total Students
-                    </p>
-                    <div className="text-3xl font-black text-[#0c46c4] tracking-tight">
-                      {metrics.students}
+                {[
+                  { label: "Total Students",  value: metrics.students || students.length, sub: "Active Learners",    color: "#0c46c4", bg: "#dbeafe", icon: "students" },
+                  { label: "Paid Invoices",   value: `₹${metrics.paidFees || 0}`,         sub: "Consolidated",       color: "#d97706", bg: "#fef3c7", icon: "billing"  },
+                  { label: "Pending Fees",    value: `₹${totalUnpaid}`,                   sub: `${unpaidFees.length} invoices`,  color: "#dc2626", bg: "#fee2e2", icon: "billing"  },
+                ].map((card, i) => (
+                  <div key={i} className="p-4 bg-white rounded-2xl shadow-sm border border-brand-blue/6 hover-glow transition-all duration-300 cursor-pointer">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: card.bg, color: card.color }}>
+                        {getSidebarIcon(card.icon, "w-4.5 h-4.5")}
+                      </div>
                     </div>
-                    <p className="text-[9px] text-[#0c46c4]/70 font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#0c46c4]"></span>{" "}
-                      Active Learners
-                    </p>
+                    <div className="text-xl font-black tracking-tight" style={{ color: card.color }}>{card.value}</div>
+                    <p className="text-[9px] font-extrabold uppercase tracking-wider text-slate-500 mt-0.5">{card.label}</p>
+                    <p className="text-[8px] font-semibold mt-0.5" style={{ color: card.color + "aa" }}>{card.sub}</p>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-[#dbeafe]/60 flex items-center justify-center text-[#0c46c4] flex-shrink-0">
-                    {getSidebarIcon("students", "w-6 h-6")}
+                ))}
+              </div>
+
+              {/* ── Row 2: Quick Actions ── */}
+              <div className="bg-white rounded-2xl shadow-sm border border-brand-blue/6 overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-100">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-[#0a1835]">Quick Actions</h4>
+                  <p className="text-[9px] text-slate-400 font-semibold mt-0.5">Jump to any section instantly</p>
+                </div>
+                <div className="p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {[
+                    { label: "Add Student",      tab: "students",        bg: "bg-blue-50",   text: "text-[#0c46c4]",  border: "border-blue-200",  icon: "students"  },
+                    { label: "Mark Attendance",  tab: "manualAttendance",bg: "bg-green-50",  text: "text-emerald-700",border: "border-green-200",  icon: "manualAttendance" },
+                    { label: "Upload Homework",  tab: "homework",        bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-200",  icon: "homework"  },
+                    { label: "Add Fee",          tab: "billing",         bg: "bg-yellow-50", text: "text-[#d97706]",  border: "border-yellow-200", icon: "billing"   },
+                    { label: "Post Notice",      tab: "notices",         bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200",  icon: "notices"   },
+                    { label: "View Results",     tab: "results",         bg: "bg-red-50",    text: "text-[#dc2626]",  border: "border-red-200",    icon: "results"   },
+                  ].map((a, i) => (
+                    <button key={i} onClick={() => setActiveTab(a.tab)}
+                      className={`p-3 rounded-xl border ${a.bg} ${a.border} ${a.text} flex items-center gap-2.5 text-left cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5`}>
+                      <div className={`w-7 h-7 rounded-lg bg-white/70 flex items-center justify-center flex-shrink-0`}>
+                        {getSidebarIcon(a.icon, "w-4 h-4")}
+                      </div>
+                      <span className="text-[9px] font-extrabold uppercase tracking-wider leading-tight">{a.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Row 3: Recent Activity Log + Pending Fees ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                {/* Recent Activity */}
+                <div className="bg-white rounded-2xl shadow-sm border border-brand-blue/6 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-[#0a1835]">Recent Activity</h4>
+                      <p className="text-[9px] text-slate-400 font-semibold mt-0.5">Latest system events</p>
+                    </div>
+                    <button onClick={() => setActiveTab("logs")} className="text-[9px] font-extrabold uppercase tracking-wider text-[#0c46c4] hover:underline cursor-pointer">View All →</button>
+                  </div>
+                  <div className="divide-y divide-slate-50">
+                    {recentActivity.length === 0 ? (
+                      <div className="px-5 py-8 text-center text-[10px] text-slate-400 font-semibold">No activity logged yet.</div>
+                    ) : recentActivity.map((log, i) => (
+                      <div key={log._id || i} className="px-5 py-3 flex items-start gap-3 hover:bg-slate-50/60 transition-colors">
+                        <div className="w-7 h-7 rounded-lg bg-[#0a1835]/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          {getSidebarIcon("logs", "w-3.5 h-3.5 text-[#0a1835]")}
+                        </div>
+                        <div className="flex-grow min-w-0">
+                          <p className="text-[10px] font-bold text-[#0a1835] truncate">{log.action || log.message || "System Event"}</p>
+                          <p className="text-[8.5px] text-slate-400 font-semibold truncate mt-0.5">{log.adminName || log.user || "Admin"} • {log.timestamp ? new Date(log.timestamp).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" }) : "—"}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Paid Invoices Card (Gold Wing Theme) */}
-                <div className="p-5 bg-white border-l-4 border-l-[#f1af3c] border-t border-r border-b border-brand-blue/8 rounded-2xl shadow-sm flex items-center justify-between hover-glow transition-all duration-300 cursor-pointer">
-                  <div className="space-y-1.5 text-left">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                      Paid Invoices
-                    </p>
-                    <div className="text-3xl font-black text-[#d97706] tracking-tight">
-                      ₹{metrics.paidFees}
+                {/* Pending Fee Invoices */}
+                <div className="bg-white rounded-2xl shadow-sm border border-brand-blue/6 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-[#0a1835]">Pending Fees</h4>
+                      <p className="text-[9px] text-slate-400 font-semibold mt-0.5">{unpaidFees.length} unpaid invoices · ₹{totalUnpaid} due</p>
                     </div>
-                    <p className="text-[9px] text-[#d97706]/70 font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#d97706]"></span>{" "}
-                      Consolidated
-                    </p>
+                    <button onClick={() => setActiveTab("billing")} className="text-[9px] font-extrabold uppercase tracking-wider text-[#d97706] hover:underline cursor-pointer">Manage →</button>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-[#fef3c7]/60 flex items-center justify-center text-[#d97706] flex-shrink-0">
-                    {getSidebarIcon("billing", "w-6 h-6")}
-                  </div>
-                </div>
-
-                {/* Online Inquiries Card (Red Wing Theme) */}
-                <div className="p-5 bg-white border-l-4 border-l-[#dc2626] border-t border-r border-b border-brand-blue/8 rounded-2xl shadow-sm flex items-center justify-between hover-glow transition-all duration-300 cursor-pointer">
-                  <div className="space-y-1.5 text-left">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                      Online Inquiries
-                    </p>
-                    <div className="text-3xl font-black text-[#dc2626] tracking-tight">
-                      {metrics.inquiries || 0}
-                    </div>
-                    <p className="text-[9px] text-[#dc2626]/70 font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626] animate-pulse"></span>{" "}
-                      Pending Review
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 rounded-xl bg-[#fee2e2]/60 flex items-center justify-center text-[#dc2626] flex-shrink-0">
-                    {getSidebarIcon("admissions", "w-6 h-6")}
+                  <div className="divide-y divide-slate-50">
+                    {unpaidFees.length === 0 ? (
+                      <div className="px-5 py-8 text-center flex flex-col items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-250 flex items-center justify-center mb-2 text-emerald-600">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        </div>
+                        <p className="text-[10px] text-emerald-600 font-bold">All fees cleared!</p>
+                        <p className="text-[9px] text-slate-400 font-semibold mt-0.5">No pending invoices at this time.</p>
+                      </div>
+                    ) : unpaidFees.slice(0, 5).map((fee, i) => {
+                      const student = usersList.find(u => u._id === fee.studentId || u._id === fee.studentId?._id);
+                      return (
+                        <div key={fee._id || i} className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50/60 transition-colors">
+                          <div className="w-8 h-8 rounded-full bg-red-50 border border-red-200 flex items-center justify-center font-black text-xs text-red-700 flex-shrink-0">
+                            {student?.name?.[0]?.toUpperCase() || "S"}
+                          </div>
+                          <div className="flex-grow min-w-0">
+                            <p className="text-[10px] font-bold text-[#0a1835] truncate">{student?.name || "Student"}</p>
+                            <p className="text-[9px] text-slate-400 font-semibold truncate">{fee.description || "Fee Invoice"} • Due {fee.dueDate ? new Date(fee.dueDate).toLocaleDateString("en-IN") : "—"}</p>
+                          </div>
+                          <span className="text-[10px] font-black text-[#dc2626] flex-shrink-0">₹{fee.amount}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
 
-              {/* Biometric center */}
-              <div className="p-6 bg-white border border-brand-blue/5 rounded-2xl shadow-sm space-y-5 hover-glow transition-all duration-300">
-                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    {getSidebarIcon(
-                      "biometric",
-                      "w-5 h-5 text-brand-blue animate-pulse",
-                    )}
-                    <h4 className="text-xs font-black uppercase tracking-wider text-brand-blue">
-                      Biometric Sync Center
-                    </h4>
+              {/* ── Row 4: Recent Admissions Inquiries ── */}
+              {recentInquiries.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-sm border border-brand-blue/6 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-[#0a1835]">Recent Admissions Inquiries</h4>
+                      <p className="text-[9px] text-slate-400 font-semibold mt-0.5">{inquiriesList.length} total inquiries received</p>
+                    </div>
+                    <button onClick={() => setActiveTab("admissions")} className="text-[9px] font-extrabold uppercase tracking-wider text-purple-600 hover:underline cursor-pointer">View All →</button>
                   </div>
-                  <span className="px-2.5 py-0.5 text-[8px] font-extrabold text-white bg-emerald-500 rounded-full tracking-widest animate-pulse">
-                    ONLINE
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/40 text-xs flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
-                  <div className="text-left">
-                    <p className="font-extrabold text-brand-blue">
-                      RFID Biometric Gate Sync
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5 font-medium">
-                      Punch live gate attendance logs automatically
-                    </p>
-                  </div>
-                  <button
-                    onClick={simulateBiometricSync}
-                    className="px-4 py-2.5 text-[10px] font-extrabold uppercase text-[#0a1835] bg-brand-yellow hover:bg-amber-400 rounded-lg shadow shadow-brand-yellow/15 transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer flex-shrink-0 flex items-center justify-center gap-1.5 w-full sm:w-auto"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2.5}
-                      stroke="currentColor"
-                      className="w-3.5 h-3.5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-                      />
-                    </svg>
-                    <span>SIMULATE GATE PUNCH</span>
-                  </button>
-                </div>
-
-                {simSuccess && (
-                  <div className="p-3 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-250/20 rounded-lg font-semibold animate-pulse">
-                    ✓ {simSuccess}
-                  </div>
-                )}
-
-                <div className="text-left">
-                  <label className="block text-[10px] font-extrabold text-brand-blue uppercase tracking-wider mb-2">
-                    Select Student Biometric RFID Card
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={simBiometricId}
-                      onChange={(e) => setSimBiometricId(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-slate-800 text-xs font-semibold focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow/50 transition-all appearance-none cursor-pointer"
-                    >
-                      {usersList
-                        .filter((u) => u.role === "student")
-                        .map((s) => (
-                          <option key={s._id} value={s.biometricId}>
-                            {s.name} (RFID Card:{" "}
-                            {s.biometricId || "RFID-9988-77"})
-                          </option>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="bg-slate-50/80">
+                          <th className="px-5 py-2.5 text-[9px] font-extrabold uppercase tracking-wider text-slate-500">Name</th>
+                          <th className="px-5 py-2.5 text-[9px] font-extrabold uppercase tracking-wider text-slate-500">Phone</th>
+                          <th className="px-5 py-2.5 text-[9px] font-extrabold uppercase tracking-wider text-slate-500">Class</th>
+                          <th className="px-5 py-2.5 text-[9px] font-extrabold uppercase tracking-wider text-slate-500">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {recentInquiries.map((inq, i) => (
+                          <tr key={inq._id || i} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-5 py-3 text-[10px] font-bold text-[#0a1835]">{inq.studentName || inq.name || "—"}</td>
+                            <td className="px-5 py-3 text-[10px] text-slate-500 font-mono">{inq.phone || inq.contactPhone || "—"}</td>
+                            <td className="px-5 py-3 text-[10px] text-slate-500">Std {inq.classLevel || inq.interestedClass || "—"}</td>
+                            <td className="px-5 py-3">
+                              <span className={`px-2 py-0.5 rounded-lg text-[8px] font-extrabold uppercase border ${
+                                inq.status === "Admitted" ? "bg-emerald-50 border-emerald-200 text-emerald-700" :
+                                inq.status === "Rejected" ? "bg-red-50 border-red-200 text-red-700" :
+                                "bg-amber-50 border-amber-200 text-amber-700"
+                              }`}>{inq.status || "Pending"}</span>
+                            </td>
+                          </tr>
                         ))}
-                    </select>
-                    <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
-                      ▼
-                    </div>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
-          )}
+            );
+          })()}
 
           {/* ========================================================
               TAB CONTENT: STUDENTS CRUD & ID CARDS
@@ -2209,31 +2296,33 @@ export default function AdminPortal() {
                                 className="hover:bg-slate-50/50 transition-colors duration-200"
                               >
                                 {/* Card Top Bar */}
-                                <div className="px-5 py-3.5 flex items-center gap-4">
-                                  <div
-                                    className={`w-10 h-10 rounded-full ${avatarBg} text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-sm`}
-                                  >
-                                    {initial}
-                                  </div>
-                                  <div className="flex-grow min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <h5 className="text-[13px] font-black text-[#0a1835] truncate">
-                                        {student.name}
-                                      </h5>
-                                      <span
-                                        className={`px-2 py-0.5 rounded-md border text-[8px] font-extrabold uppercase tracking-wider ${classBadge}`}
-                                      >
-                                        Std {cls}
-                                      </span>
-                                      <span className="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-[#0a1835] text-[8px] font-bold">
-                                        {student.batch || "Batch A"}
-                                      </span>
+                                <div className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+                                  <div className="flex items-center gap-4 flex-grow min-w-0">
+                                    <div
+                                      className={`w-10 h-10 rounded-full ${avatarBg} text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-sm`}
+                                    >
+                                      {initial}
                                     </div>
-                                    <p className="text-[10px] text-slate-400 font-semibold mt-0.5 font-mono">
-                                      Roll: {student.rollNumber || "N/A"}
-                                    </p>
+                                    <div className="flex-grow min-w-0 text-left">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <h5 className="text-[13px] font-black text-[#0a1835] truncate max-w-[140px] sm:max-w-none">
+                                          {student.name}
+                                        </h5>
+                                        <span
+                                          className={`px-2 py-0.5 rounded-md border text-[8px] font-extrabold uppercase tracking-wider ${classBadge}`}
+                                        >
+                                          Std {cls}
+                                        </span>
+                                        <span className="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-[#0a1835] text-[8px] font-bold">
+                                          {student.batch || "Batch A"}
+                                        </span>
+                                      </div>
+                                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5 font-mono">
+                                        Roll: {student.rollNumber || "N/A"}
+                                      </p>
+                                    </div>
                                   </div>
-                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                  <div className="flex items-center gap-2 flex-wrap mt-2 sm:mt-0 justify-start sm:justify-end flex-shrink-0">
                                     <button
                                       onClick={() =>
                                         startEditingStudent(student)
@@ -2469,44 +2558,7 @@ export default function AdminPortal() {
             </div>
           )}
 
-          {/* ========================================================
-              TAB CONTENT: BIOMETRIC ATTENDANCE LOGS
-              ======================================================== */}
-          {activeTab === "biometric" && (
-            <div className="space-y-4">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                Attendance Sync Logs Ledger
-              </h4>
-              {syncLogs.map((log) => (
-                <div
-                  key={log._id}
-                  className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between text-xs shadow-sm"
-                >
-                  <div>
-                    <span className="text-[10px] font-mono font-bold text-slate-400">
-                      {log.date}
-                    </span>
-                    <p className="font-bold text-slate-900 mt-0.5">
-                      {log.studentId?.name}
-                    </p>
-                    <p className="text-[10px] text-slate-450">
-                      Checkin: {log.checkInTime || "--"} | Checkout:{" "}
-                      {log.checkOutTime || "--"}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
-                      log.status === "Present"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-amber-100 text-amber-700"
-                    }`}
-                  >
-                    {log.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+
 
           {/* ========================================================
               TAB CONTENT: TUITION FEES
@@ -3036,7 +3088,7 @@ export default function AdminPortal() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3 bg-[#0a1835] text-white hover:bg-slate-800 rounded-xl font-bold uppercase tracking-widest cursor-pointer shadow"
+                  className="w-full py-2.5 text-xs font-extrabold text-brand-blue bg-brand-yellow hover:bg-amber-400 rounded-xl shadow shadow-brand-yellow/15 uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer"
                 >
                   PUNCH MANUAL ATTENDANCE
                 </button>
@@ -3203,7 +3255,7 @@ export default function AdminPortal() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3 bg-[#0a1835] text-white hover:bg-slate-800 rounded-xl font-bold uppercase tracking-widest cursor-pointer shadow"
+                  className="w-full py-2.5 text-xs font-extrabold text-brand-blue bg-brand-yellow hover:bg-amber-400 rounded-xl shadow shadow-brand-yellow/15 uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer"
                 >
                   UPLOAD HOMEWORK ASSIGNMENT
                 </button>
@@ -3388,7 +3440,7 @@ export default function AdminPortal() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3 bg-[#0a1835] text-white hover:bg-slate-800 rounded-xl font-bold uppercase tracking-widest cursor-pointer shadow"
+                  className="w-full py-2.5 text-xs font-extrabold text-brand-blue bg-brand-yellow hover:bg-amber-400 rounded-xl shadow shadow-brand-yellow/15 uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer"
                 >
                   UPLOAD STUDY MATERIAL
                 </button>
@@ -3514,7 +3566,7 @@ export default function AdminPortal() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3 bg-[#0a1835] text-white hover:bg-slate-800 rounded-xl font-bold uppercase tracking-widest cursor-pointer shadow"
+                  className="w-full py-2.5 text-xs font-extrabold text-brand-blue bg-brand-yellow hover:bg-amber-400 rounded-xl shadow shadow-brand-yellow/15 uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer"
                 >
                   UPLOAD MARKS & DISPATCH ALERTS
                 </button>
@@ -3593,7 +3645,7 @@ export default function AdminPortal() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3 bg-[#0a1835] text-white hover:bg-slate-800 rounded-xl font-bold uppercase tracking-widest cursor-pointer shadow"
+                  className="w-full py-2.5 text-xs font-extrabold text-brand-blue bg-brand-yellow hover:bg-amber-400 rounded-xl shadow shadow-brand-yellow/15 uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 duration-200 cursor-pointer"
                 >
                   BROADCAST BULLETIN & BULK EMAIL
                 </button>
@@ -3703,46 +3755,46 @@ export default function AdminPortal() {
       {/* ══════ ADD STUDENT MODAL POPUP ══════ */}
       {showAddStudentModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-brand-blue/10 overflow-hidden">
-            {/* Modal Header */}
-            <div className="px-6 py-4 bg-[#0a1835] flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                  Register New Student
-                </h3>
-                <p className="text-[9px] text-slate-300 font-semibold mt-0.5">
-                  Fill in the student profile details below
-                </p>
-              </div>
-              <button
-                onClick={() => setShowAddStudentModal(false)}
-                className="text-white/60 hover:text-white hover:bg-white/10 p-2 rounded-lg transition cursor-pointer"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2.5}
-                  stroke="currentColor"
-                  className="w-5 h-5"
+            <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-brand-blue/10 overflow-hidden">
+              {/* Modal Header */}
+              <div className="px-6 py-4 bg-[#0a1835] flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-black text-white uppercase tracking-wider">
+                    Register New Student
+                  </div>
+                  <p className="text-[9px] text-slate-300 font-semibold mt-0.5">
+                    Fill in the student profile details below
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowAddStudentModal(false)}
+                  className="text-white/60 hover:text-white hover:bg-white/10 p-2 rounded-lg transition cursor-pointer"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18 18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2.5}
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18 18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
 
-            {/* Modal Body */}
-            <form
-              onSubmit={(e) => {
-                createUser(e);
-                setShowAddStudentModal(false);
-              }}
-              className="p-6 space-y-4 overflow-y-auto max-h-[calc(100vh-130px)]"
-            >
+              {/* Modal Body */}
+              <form
+                onSubmit={(e) => {
+                  createUser(e);
+                  setShowAddStudentModal(false);
+                }}
+                className="p-6 space-y-4 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-130px)] text-left"
+              >
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
@@ -4004,18 +4056,24 @@ export default function AdminPortal() {
                         </span>
                       </div>
                     )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setNewUserPhotoFile(file);
-                          setNewUserPhotoPreview(URL.createObjectURL(file));
-                        }
-                      }}
-                      className="flex-1 px-3 py-1 text-xs rounded-lg border border-slate-200 bg-slate-50"
-                    />
+                    <label className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border border-dashed border-slate-350 hover:border-brand-yellow/50 bg-slate-50 hover:bg-amber-50/20 rounded-lg cursor-pointer transition text-[10px] font-bold uppercase text-slate-550 min-w-0">
+                      <svg className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                       </svg>
+                      <span className="truncate">Upload Photo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            setNewUserPhotoFile(file);
+                            setNewUserPhotoPreview(URL.createObjectURL(file));
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
                 </div>
               </div>
@@ -4043,14 +4101,14 @@ export default function AdminPortal() {
       {/* ══════ EDIT STUDENT MODAL POPUP ══════ */}
       {showEditStudentModal && editingStudent && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-brand-blue/10 overflow-hidden">
+          <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-brand-blue/10 overflow-hidden">
             {/* Modal Header */}
             <div className="px-6 py-4 bg-[#0a1835] flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                <div className="text-sm font-black text-white uppercase tracking-wider">
                   Edit Student Profile
-                </h3>
-                <p className="text-[9px] text-slate-400 font-semibold mt-0.5">
+                </div>
+                <p className="text-[9px] text-slate-300 font-semibold mt-0.5">
                   Modify student parameters and click Save Changes
                 </p>
               </div>
@@ -4081,7 +4139,7 @@ export default function AdminPortal() {
             {/* Modal Body */}
             <form
               onSubmit={handleEditUser}
-              className="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-left"
+              className="p-6 space-y-4 max-h-[80vh] overflow-y-auto overflow-x-hidden text-left"
             >
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -4414,18 +4472,24 @@ export default function AdminPortal() {
                         </span>
                       </div>
                     )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setEditUserPhotoFile(file);
-                          setEditUserPhotoPreview(URL.createObjectURL(file));
-                        }
-                      }}
-                      className="flex-1 px-3 py-1 text-xs rounded-lg border border-slate-200 bg-slate-50"
-                    />
+                    <label className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 border border-dashed border-slate-350 hover:border-brand-yellow/50 bg-slate-50 hover:bg-amber-50/20 rounded-lg cursor-pointer transition text-[10px] font-bold uppercase text-slate-550 flex-shrink-0 min-w-0">
+                      <svg className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      <span className="truncate">Upload</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            setEditUserPhotoFile(file);
+                            setEditUserPhotoPreview(URL.createObjectURL(file));
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
                 </div>
               </div>
